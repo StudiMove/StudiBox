@@ -1,0 +1,5 @@
+backend/config/config.go
+frontend
+.env
+docker-compose.yml
+Dockerfile
