@@ -1,5 +1,3 @@
-// src/components/InputField.tsx
-
 import React from 'react';
 import { InputFieldProps } from '../types/InputField/InputFieldProps';
 
@@ -9,13 +7,13 @@ const sizeClasses = {
   large: 'py-3 px-4 text-lg',
 };
 
-const InputField: React.FC<InputFieldProps> = ({
+function InputField({
   type,
   label,
   value,
   size = 'medium',
   onChange,
-}) => {
+}: InputFieldProps) {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onChange(event.target.value);
   };
@@ -31,6 +29,6 @@ const InputField: React.FC<InputFieldProps> = ({
       />
     </div>
   );
-};
+}
 
 export default InputField;
