@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* tailwind.css */
+.container {
+  @apply mx-auto px-4; /* Padding par défaut pour les petits écrans */
+}
+
+@media (min-width: 768px) {
+  .container {
+    @apply px-8; /* Padding plus large pour les écrans moyens et plus grands */
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    @apply px-12; /* Padding encore plus large pour les grands écrans */
+  }
+}
