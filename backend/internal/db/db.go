@@ -43,6 +43,7 @@ func Migrate() {
         &models.AssociationMembership{},
         &models.PasswordReset{},
         &models.PointHistory{},
+        &models.EventOption{},
     )
     if err != nil {
         log.Fatalf("Failed to migrate database: %v", err)

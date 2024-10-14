@@ -1,0 +1,30 @@
+# .env file
+
+# Configuration de la base de données
+DB_HOST=db
+DB_PORT=5432
+DB_USER=romain
+DB_PASSWORD=VotreMotDePasse
+DB_NAME=databasestudymove
+
+
+# Configuration du serveur
+SERVER_PORT=8080
+#  JWT SECRET KEY
+JWT_SECRET_ACCESS_KEY=VotreMotDePasse
+
+# Configuration d'Amazon S3
+AWS_ACCESS_KEY_ID=youridkey    # Ton access key ID AWS
+AWS_SECRET_ACCESS_KEY=yoursecretkey  # Ta clé d'accès secrète AWS
+AWS_REGION=yourregion                   # Région où se trouve ton bucket S3
+S3_BUCKET=yours3name                 # Le nom du bucket S3 que tu as créé
+
+# Configuration de l'API
+API_BASE_URL=http://localhost:8080
+
+# Port pour le backend en développement
+BACKEND_PORT=8080
+
+# Port pour le frontend en développement
+FRONTEND_PORT=3000
+

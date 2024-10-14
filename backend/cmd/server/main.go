@@ -4,16 +4,20 @@ import (
     "fmt"
     "log"
     "net/http"
+
     "backend/config"
-    "backend/internal/db"
-    "backend/internal/api"
-    "backend/internal/services/auth"
-    "backend/internal/services/storage"
+    "backend/internal/api/routes"
+    "backend/internal/api/middlewares"
     "backend/internal/api/handlers/authentification"
-    "backend/pkg/httpclient"
-    "backend/internal/services/event"
     "backend/internal/api/handlers/events"
-    "backend/internal/db/models" // Importez les modèles
+    "backend/internal/api/handlers/user/business/profil"
+    "backend/internal/db"
+    "backend/internal/services/auth"
+    "backend/internal/services/event"
+    "backend/internal/services/storage"
+    "backend/pkg/httpclient"
+    "backend/internal/services/userservice"
+    "backend/internal/services/userservice/business/profilservice" // Importer le profilservice
 )
 
 func main() {
@@ -23,8 +27,11 @@ func main() {
     // Connexion à la base de données
     db.ConnectDatabase()
 
-    // Migrer automatiquement les modèles
-    db.DB.AutoMigrate(&models.Event{})
+    // Migrer automatiquement tous les modèles
+    db.Migrate()
+
+    // Initialiser les rôles
+    db.InitRoles(db.DB)
 
     // Créer une instance du service de stockage
     s3Service := storage.NewS3Storage(config.AppConfig.S3Bucket)
@@ -33,8 +40,10 @@ func main() {
     apiClient := httpclient.NewAPIClient(config.AppConfig.APIBaseURL)
 
     // Créer les services
-    authService := auth.NewAuthService(db.DB)
+    authService := auth.NewAuthService(db.DB)        
     eventService := event.NewEventService(db.DB)
+    userService := userservice.NewUserService(db.DB) 
+    profilService := profilservice.NewProfilService(db.DB) // Initialiser le service Profil
 
     // Créer les handlers
     authHandler := authentification.NewAuthHandler(authService)
@@ -44,10 +53,31 @@ func main() {
     updateEventHandler := events.NewUpdateEventHandler(eventService)
     deleteEventHandler := events.NewDeleteEventHandler(eventService)
 
+    // Créer les handlers pour le profil business avec profilService
+    getProfilHandler := profil.NewGetProfilHandler(profilService)
+    updateProfilHandler := profil.NewUpdateProfilHandler(profilService)
+
     // Enregistrer les routes
-    api.RegisterRoutes(s3Service, authHandler, registerHandler, createEventHandler, getEventHandler, updateEventHandler, deleteEventHandler)
+    mux := http.NewServeMux()
+    routes.RegisterRoutes(
+        mux,
+        s3Service,
+        authHandler,
+        registerHandler,
+        createEventHandler,
+        getEventHandler,
+        updateEventHandler,
+        deleteEventHandler,
+        userService,
+        authService,
+        getProfilHandler, // Ajout du handler de récupération du profil
+        updateProfilHandler, // Ajout du handler de mise à jour du profil
+    )
 
     // Démarrer le serveur
-    fmt.Println("Starting server on port", config.AppConfig.ServerPort)
-    log.Fatal(http.ListenAndServe(":"+config.AppConfig.ServerPort, nil))
+    serverAddress := fmt.Sprintf(":%s", config.AppConfig.ServerPort)
+    fmt.Printf("Démarrage du serveur sur le port %s\n", config.AppConfig.ServerPort)
+
+    // Utiliser le middleware CORS
+    log.Fatal(http.ListenAndServe(serverAddress, middleware.CORSMiddleware(mux)))
 }
