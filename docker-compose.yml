@@ -2,27 +2,41 @@ services:
   db:
     image: postgres:latest
     environment:
-      POSTGRES_USER: romain
-      POSTGRES_PASSWORD: votre_mot_de_passe
-      POSTGRES_DB: databasestudymove
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - '5432:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
     networks:
       - studymovenetwork
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME} -h db || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile
     environment:
       DB_HOST: db
       DB_PORT: 5432
-      DB_USER: romain
-      DB_PASSWORD: votre_mot_de_passe
-      DB_NAME: databasestudymove
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      SERVER_PORT: ${SERVER_PORT}
+      API_BASE_URL: ${API_BASE_URL}
+    volumes:
+      - ./.env:/app/.env
     ports:
       - '8080:8080'
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - studymovenetwork
 
@@ -31,20 +45,29 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
+      CSRF_PROTECT: "False"
     ports:
       - '5050:80'
     networks:
       - studymovenetwork
+    depends_on:
+      db:
+        condition: service_healthy
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #   ports:
-  #     - '3000:80'
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - studymovenetwork
+  smtp:
+    image: bytemark/smtp
+    container_name: smtp
+    environment:
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+    ports:
+      - "1025:25"
+    restart: always
+    networks:
+      - studymovenetwork
+
+volumes:
+  db_data:
 
 networks:
   studymovenetwork:

@@ -1,45 +1,33 @@
 # Étape 1 : Construction
 FROM golang:1.23 AS builder
 
-# Définir le répertoire de travail
+# Définir le répertoire de travail pour la phase de build
 WORKDIR /app
 
-# Copier go.mod et go.sum et télécharger les dépendances
+# Copier les fichiers go.mod et go.sum puis télécharger les dépendances
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copier le code source
+# Copier tout le code source
 COPY . .
 
-# Construire l'application
-WORKDIR /app/cmd/server
-RUN go build -o main .
-
-# Vérifiez que le binaire a bien été créé
-RUN ls -la /app/cmd/server
-RUN pwd
+# Construire l'application Go
+RUN go build -o /app/buildedApp ./main.go
 
 # Étape 2 : Exécution
 FROM debian:bookworm-slim
 
-# Installer les certificats CA
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+# Installer les certificats CA et curl
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*
 
-# Définir le répertoire de travail
+# Définir le répertoire de travail pour l'exécution
 WORKDIR /app
 
-# Copier l'exécutable de l'étape de construction
-COPY --from=builder /app/cmd/server/main .
+# Copier l'exécutable depuis la phase de build
+COPY --from=builder /app/buildedApp .
 
-# Vérifiez le contenu du répertoire avant de démarrer
-RUN ls -la /app
-RUN pwd
-
-# Copier le fichier .env dans l'image
-COPY .env ./.env
-
-# Exposer le port
+# Exposer le port 8080
 EXPOSE 8080
 
-# Définir le point d'entrée
-CMD ["/app/main"]
+# Commande de démarrage de l'application
+CMD ["/app/buildedApp"]
