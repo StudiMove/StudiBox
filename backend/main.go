@@ -32,6 +32,16 @@ func main() {
 		log.Fatalf("Échec de l'initialisation des rôles : %v", err)
 	}
 
+	// Initialiser les catégories après la migration des modèles
+	if err := database.InitCategories(database.DB); err != nil {
+		log.Fatalf("Échec de l'initialisation des catégories: %v", err)
+	}
+
+	// Initialiser les tags après la migration des modèles
+	if err := database.InitTags(database.DB); err != nil {
+		log.Fatalf("Échec de l'initialisation des tags : %v", err)
+	}
+
 	// Créer le routeur Gin
 	router := gin.Default()
 

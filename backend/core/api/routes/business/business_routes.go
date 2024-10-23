@@ -5,27 +5,29 @@ import (
 	"backend/core/api/middleware"
 	"backend/core/services/auth"
 	"backend/core/services/business"
-	"net/http"
+	"backend/core/services/user"
 
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterBusinessRoutes(routerGroup *gin.RouterGroup, businessService *business.BusinessService, authService *auth.AuthService) {
+func BusinessRoutes(routerGroup *gin.RouterGroup, businessService *business.BusinessService, userService *user.UserService, authService *auth.AuthService) {
 	businessGroup := routerGroup.Group("/business")
 	businessGroup.Use(middleware.AuthMiddleware())
 
 	{
+		// Route pour récupérer le profil de l'utilisateur connecté
 		businessGroup.GET("/profile", func(c *gin.Context) {
-			businessHandlers.HandleGetBusinessProfile(c, businessService)
+			businessHandlers.HandleGetBusiness(c, businessService, userService)
 		})
 
+		// Route pour mettre à jour le profil de l'utilisateur connecté ou un business par ID
 		businessGroup.PUT("/profile", func(c *gin.Context) {
-			businessHandlers.HandleUpdateBusinessProfile(c, businessService)
+			businessHandlers.HandleUpdateBusiness(c, businessService, userService)
 		})
 
 		// Route pour récupérer un business spécifique par ID
 		businessGroup.GET("/:id", func(c *gin.Context) {
-			businessHandlers.HandleGetBusinessByID(c, businessService)
+			businessHandlers.HandleGetBusiness(c, businessService, userService)
 		})
 
 		// Route pour récupérer tous les businesses
@@ -33,12 +35,9 @@ func RegisterBusinessRoutes(routerGroup *gin.RouterGroup, businessService *busin
 			businessHandlers.HandleGetAllBusinesses(c, businessService)
 		})
 
-		// Route pour mettre à jour un business par ID (seulement pour les Admins)
-		businessGroup.PUT("/:id", func(c *gin.Context) {
-			requiredRoles := []string{"Admin"}
-			middleware.RoleMiddleware(authService, requiredRoles, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				businessHandlers.HandleUpdateBusinessByID(c, businessService)
-			}))
+		// Route pour mettre à jour un business par ID (Admin seulement)
+		businessGroup.PUT("/:id", middleware.RoleMiddleware(authService, []string{"Admin"}), func(c *gin.Context) {
+			businessHandlers.HandleUpdateBusiness(c, businessService, userService)
 		})
 	}
 }

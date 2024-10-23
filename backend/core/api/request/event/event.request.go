@@ -20,8 +20,8 @@ type CreateEventRequest struct {
 	Postcode    string   `json:"postcode"`
 	Region      string   `json:"region"`
 	Country     string   `json:"country"`
-	Category    string   `json:"category"`
-	Tags        string   `json:"tags"`
+	Category    []string `json:"category"`
+	Tags        []string `json:"tags"`
 }
 
 type UpdateEventRequest struct {
@@ -43,6 +43,6 @@ type UpdateEventRequest struct {
 	Postcode    string   `json:"postcode"`
 	Region      string   `json:"region"`
 	Country     string   `json:"country"`
-	Category    string   `json:"category"`
-	Tags        string   `json:"tags"`
+	Category    []string `json:"category"`
+	Tags        []string `json:"tags"`
 }

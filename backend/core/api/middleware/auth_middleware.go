@@ -1,47 +1,3 @@
-// func AuthMiddleware(next http.Handler) http.Handler {
-//     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//         token := r.Header.Get("Authorization")
-//         if token == "" {
-//             http.Error(w, "Forbidden", http.StatusForbidden)
-//             return
-//         }
-
-//         // Valider le JWT
-//         claims, err := utils.ValidateJWT(token, config.AppConfig.JwtSecretAccessKey)
-//         if err != nil {
-//             http.Error(w, "Forbidden", http.StatusForbidden)
-//             return
-//         }
-
-//         // Ajouter les claims au contexte
-//         ctx := context.WithValue(r.Context(), "user", claims)
-//         next.ServeHTTP(w, r.WithContext(ctx))
-//     })
-// }
-// func AuthMiddleware(next http.Handler) http.Handler {
-//     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//         token := r.Header.Get("Authorization")
-//         if token == "" {
-//             log.Println("No token found in the request")
-//             http.Error(w, "Forbidden", http.StatusForbidden)
-//             return
-//         }
-
-//         // Valider le JWT
-//         claims, err := utils.ValidateJWT(token, config.AppConfig.JwtSecretAccessKey)
-//         if err != nil {
-//             log.Printf("Failed to validate token: %v", err)
-//             http.Error(w, "Forbidden", http.StatusForbidden)
-//             return
-//         }
-
-//         // Ajouter les claims au contexte
-//         log.Printf("Token validated, user ID: %v", claims.UserID)
-//         ctx := context.WithValue(r.Context(), "user", claims)
-//         next.ServeHTTP(w, r.WithContext(ctx))
-//     })
-// }
-
 package middleware
 
 import (
@@ -60,7 +16,10 @@ func AuthMiddleware() gin.HandlerFunc {
 		token := c.GetHeader("Authorization")
 		if token == "" {
 			log.Println("No token found in the request")
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"error":   "Forbidden",
+				"message": "No token provided",
+			})
 			return
 		}
 
@@ -68,7 +27,10 @@ func AuthMiddleware() gin.HandlerFunc {
 		if len(token) > 7 && token[:7] == "Bearer " {
 			token = token[7:]
 		} else {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error":   "Unauthorized",
+				"message": "Invalid token format",
+			})
 			return
 		}
 
@@ -76,7 +38,10 @@ func AuthMiddleware() gin.HandlerFunc {
 		claims, err := utils.ValidateJWT(token, config.AppConfig.JwtSecretAccessKey)
 		if err != nil {
 			log.Printf("Failed to validate token: %v", err)
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"error":   "Forbidden",
+				"message": "Invalid token",
+			})
 			return
 		}
 

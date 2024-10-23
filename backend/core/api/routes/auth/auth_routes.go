@@ -8,7 +8,7 @@ import (
 )
 
 // RegisterAuthRoutes enregistre les routes d'authentification avec authService
-func RegisterAuthRoutes(routerGroup *gin.RouterGroup, authService *auth.AuthService) {
+func AuthRoutes(routerGroup *gin.RouterGroup, authService *auth.AuthService) {
 	authGroup := routerGroup.Group("/auth")
 	{
 		// Passer authService aux handlers

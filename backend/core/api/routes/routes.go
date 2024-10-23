@@ -9,6 +9,7 @@ import (
 	authService "backend/core/services/auth"
 	businessService "backend/core/services/business"
 	eventService "backend/core/services/event"
+	userService "backend/core/services/user"
 	"backend/database"
 
 	"github.com/gin-gonic/gin"
@@ -28,14 +29,17 @@ func SetupRouter(router *gin.Engine) *gin.Engine {
 	// Initialiser le service des utilisateurs professionnels
 	businessSvc := businessService.NewBusinessService(database.DB)
 
+	// Initialiser le service des utilisateurs
+	userSvc := userService.NewUserService(database.DB)
+
 	// Créer un groupe pour l'API
 	apiGroup := router.Group("/api")
 
-	// Enregistrer les différentes routes, en passant authSvc, businessSvc et eventSvc
-	auth_routes.RegisterAuthRoutes(apiGroup, authSvc)
-	business_routes.RegisterBusinessRoutes(apiGroup, businessSvc, authSvc)
-	user_routes.RegisterUserRoutes(apiGroup)
-	event_routes.RegisterEventRoutes(apiGroup, eventSvc)
+	// Enregistrer les différentes routes, en passant authSvc, businessSvc, userSvc et eventSvc
+	auth_routes.AuthRoutes(apiGroup, authSvc)
+	business_routes.BusinessRoutes(apiGroup, businessSvc, userSvc, authSvc)
+	user_routes.UserRoutes(apiGroup, userSvc, authSvc)
+	event_routes.EventRoutes(apiGroup, eventSvc)
 
 	return router
 }

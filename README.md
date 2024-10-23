@@ -1,84 +1,157 @@
-<!-- my-app/
-│
-├── backend/
-│ ├── main.go
-│ ├── handlers/
-│ ├── models/
-│ ├── routes/
-│ ├── utils/
-│ ├── Dockerfile
-│ ├── go.mod
-│ ├── go.sum
-│
-├── frontend/
-│ ├── src/
-│ │ ├── components/
-│ │ ├── pages/
-│ │ ├── App.tsx
-│ │ ├── index.tsx
-│ ├── public/
-│ ├── tsconfig.json
-│ ├── tailwind.config.js
-│ ├── package.json
-│ ├── Dockerfile
-│
+.
+├── .env
+├── .env.example
+├── .gitignore
 ├── docker-compose.yml
-└── README.md
-
-
-/backend -->
-
-/backend
-├── cmd/
-│ └── server/
-│ └── main.go # Point d'entrée principal du serveur
-├── config/
-│ └── config.go # Gestion de la configuration (DB, serveur, stockage)
-├── internal/
-│ ├── api/
-│ │ ├── handlers/
-│ │ │ ├── file/ # Dossier pour les gestionnaires de fichiers
-│ │ │ │ ├── upload_file_handler.go # Gestionnaire pour le téléchargement des fichiers
-│ │ │ │ ├── delete_file_handler.go # Gestionnaire pour la suppression des fichiers
-│ │ │ │ └── get_file_url_handler.go # Gestionnaire pour récupérer l'URL des fichiers
-│ │ │ ├── user/ # Dossier pour les gestionnaires d'utilisateurs
-│ │ │ │ ├── user_handler.go # Gestionnaire pour les opérations sur les utilisateurs
-│ │ │ │ └── auth_handler.go # Gestionnaire pour l'authentification
-│ │ │ ├── authentication/ # Dossier pour l'authentification
-│ │ │ │ ├── register_handler.go # Gestionnaire pour l'inscription
-│ │ │ │ └── auth_handler.go # Gestionnaire pour la connexion
-│ │ ├── routes/
-│ │ │ ├── file_routes.go # Routes pour les fichiers
-│ │ │ ├── user_routes.go # Routes pour les utilisateurs
-│ │ │ └── auth_routes.go # Routes pour l'authentification
-│ │ └── routes.go # Route principale
-│ ├── services/
-│ │ ├── storage/
-│ │ │ ├── storage_service.go # Interface StorageService
-│ │ │ ├── s3_storage.go # Implémentation pour Amazon S3
-│ │ │ ├── cloudflare_storage.go # (Si jamais tu souhaites l'ajouter)
-│ │ │ └── storage_errors.go # Gestion des erreurs de stockage
-│ │ ├── user_service.go # Service pour les utilisateurs
-│ │ └── ...
-│ ├── db/
-│ │ ├── migrations/
-│ │ │ └── 001_initial_schema.go # Migrations pour créer la base de données
-│ │ ├── models/
-│ │ │ ├── user.go # Modèle utilisateur
-│ │ │ └── transaction.go # Modèle transaction
-│ │ └── repositories/
-│ │ │ ├── user_repository.go # Repositories pour accéder aux données utilisateur
-│ │ │ └── transaction_repository.go # Repositories pour accéder aux données transaction
-│ ├── utils/
-│ │ ├── logger.go # Gestionnaire de logs
-│ │ └── security.go # Fonctions de sécurité (comme le hashage des mots de passe)
-├── scripts/
-│ ├── migrate.sh # Script pour les migrations de base de données
-│ └── run.sh # Script pour exécuter l'application
-├── test/
-│ ├── integration/
-│ │ └── user_integration_test.go # Tests d'intégration pour les utilisateurs
-│ └── unit/
-│ └── user_handler_test.go # Tests unitaires pour les gestionnaires d'utilisateurs
-├── go.mod # Fichier de gestion des dépendances Go
-└── go.sum # Fichier des sommes de contrôle des dépendances
+├── go.modTest
+├── README.md
+├── structure.txt
+└── backend
+    ├── Dockerfile
+    ├── go.mod
+    ├── go.sum
+    ├── main.go
+    ├── config
+    │   └── config.go
+    ├── core
+    │   ├── api
+    │   │   ├── handlers
+    │   │   │   ├── auth
+    │   │   │   │   ├── login_handler.go
+    │   │   │   │   └── register_handler.go
+    │   │   │   ├── business
+    │   │   │   │   ├── business_management_handler.go
+    │   │   │   │   ├── business_profile_handler.go
+    │   │   │   │   └── business_retrieval_handler.go
+    │   │   │   ├── events
+    │   │   │   │   ├── event_likes_handler.go
+    │   │   │   │   ├── event_management_handler.go
+    │   │   │   │   └── event_retrieval_handler.go
+    │   │   │   ├── file
+    │   │   │   │   ├── delete_file_handler.go
+    │   │   │   │   ├── get_file_url_handler.go
+    │   │   │   │   └── upload_file_handler.go
+    │   │   │   └── user
+    │   │   │       ├── user_management_handler.go
+    │   │   │       ├── user_profile_handler.go
+    │   │   │       └── user_retrieval_handler.go
+    │   │   ├── middleware
+    │   │   │   ├── auth_middleware.go
+    │   │   │   ├── cors_middleware.go
+    │   │   │   ├── logging_middleware.go
+    │   │   │   ├── role_middleware.go
+    │   │   │   └── upload_middleware.go
+    │   │   ├── request
+    │   │   │   ├── auth
+    │   │   │   │   └── auth_request.go
+    │   │   │   ├── business
+    │   │   │   │   └── business_request.go
+    │   │   │   ├── event
+    │   │   │   │   └── event.request.go
+    │   │   │   └── user
+    │   │   │       └── user.request.go
+    │   │   ├── response
+    │   │   │   ├── response.go
+    │   │   │   ├── auth
+    │   │   │   │   └── auth_response.go
+    │   │   │   ├── business
+    │   │   │   │   └── business_response.go
+    │   │   │   ├── event
+    │   │   │   │   └── event.response.go
+    │   │   │   └── user
+    │   │   │       └── user_response.go
+    │   │   ├── routes
+    │   │   │   ├── routes.go
+    │   │   │   ├── auth
+    │   │   │   │   └── auth_routes.go
+    │   │   │   ├── business
+    │   │   │   │   └── business_routes.go
+    │   │   │   ├── event
+    │   │   │   │   └── event_routes.go
+    │   │   │   ├── file
+    │   │   │   │   └── file_routes.go
+    │   │   │   ├── pay
+    │   │   │   │   └── payment_routes.txt
+    │   │   │   ├── ticket
+    │   │   │   │   └── ticket_routes.txt
+    │   │   │   └── user
+    │   │   │       └── user_routes.go
+    │   │   ├── models
+    │   │   │   ├── association.go
+    │   │   │   ├── association_membership.go
+    │   │   │   ├── business_user.go
+    │   │   │   ├── category.go
+    │   │   │   ├── educational_institution.go
+    │   │   │   ├── event.go
+    │   │   │   ├── event_like.go
+    │   │   │   ├── event_option.go
+    │   │   │   ├── event_view.go
+    │   │   │   ├── password_reset.go
+    │   │   │   ├── payment.go
+    │   │   │   ├── payment_transaction.go
+    │   │   │   ├── point_history.go
+    │   │   │   ├── role.go
+    │   │   │   ├── school_membership.go
+    │   │   │   ├── studibox_transaction.go
+    │   │   │   ├── tag.go
+    │   │   │   ├── ticket.go
+    │   │   │   ├── user.go
+    │   │   │   └── user_role.go
+    │   │   ├── services
+    │   │   │   ├── auth
+    │   │   │   │   └── auth_service.go
+    │   │   │   ├── business
+    │   │   │   │   ├── business_management_service.go
+    │   │   │   │   ├── business_profile_service.go
+    │   │   │   │   ├── business_retrieval_service.go
+    │   │   │   │   └── business_service.go
+    │   │   │   ├── event
+    │   │   │   │   ├── event_likes_service.go
+    │   │   │   │   ├── event_management_service.go
+    │   │   │   │   ├── event_retrieval_service.go
+    │   │   │   │   └── event_service.go
+    │   │   │   ├── storage
+    │   │   │   │   ├── s3_storage.go
+    │   │   │   │   └── storage_service.go
+    │   │   │   └── user
+    │   │   │       ├── user_management_service.go
+    │   │   │       ├── user_profile_service.go
+    │   │   │       ├── user_retrieval_service.go
+    │   │   │       └── user_service.go
+    │   │   ├── stores
+    │   │   │   ├── business
+    │   │   │   │   ├── association_membership_store.go
+    │   │   │   │   ├── association_store.go
+    │   │   │   │   ├── business_user_store.go
+    │   │   │   │   ├── educational_institution_store.go
+    │   │   │   │   └── school_membership_store.go
+    │   │   │   ├── event
+    │   │   │   │   ├── category_store.go
+    │   │   │   │   ├── event_like_store.go
+    │   │   │   │   ├── event_option_store.go
+    │   │   │   │   ├── event_store.go
+    │   │   │   │   ├── event_view_store.go
+    │   │   │   │   └── tag_store.go
+    │   │   │   ├── payment
+    │   │   │   │   ├── payment_store.go
+    │   │   │   │   ├── payment_transaction_store.go
+    │   │   │   │   ├── point_history_store.go
+    │   │   │   │   ├── studibox_transaction_store.go
+    │   │   │   │   └── ticket_store.go
+    │   │   │   ├── user
+    │   │   │   │   ├── password_reset_store.go
+    │   │   │   │   ├── role_store.go
+    │   │   │   │   ├── user_role_store.go
+    │   │   │   │   └── user_store.go
+    │   │   ├── templates
+    │   │   │   └── index.html
+    │   │   └── utils
+    │   │       ├── convert.go
+    │   │       └── jwt.go
+    ├── database
+    │   └── db.go
+    └── pkg
+        ├── cache
+        │   └── cache.go
+        └── client
+            └── client.go

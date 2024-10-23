@@ -5,15 +5,17 @@ import (
 	"log"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // JWTClaims contient les informations stockées dans le JWT, y compris l'ID utilisateur.
 type JWTClaims struct {
-	UserID uint `json:"user_id"`
-	jwt.StandardClaims
+	UserID   uint   `json:"user_id"`
+	Issuer   string `json:"iss"` // Emis par
+	Audience string `json:"aud"` // Destiné à
+	jwt.RegisteredClaims
 }
 
 // HashPassword génère un hash sécurisé pour un mot de passe donné.
@@ -30,12 +32,16 @@ func VerifyPassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-// GenerateJWT génère un token JWT avec une durée d'expiration personnalisée.
-func GenerateJWT(userID uint, secret string, expirationHours int) (string, error) {
+// GenerateJWT génère un token JWT avec une durée d'expiration personnalisée et des claims supplémentaires.
+func GenerateJWT(userID uint, secret, issuer, audience string, expirationHours int) (string, error) {
 	claims := &JWTClaims{
-		UserID: userID,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Duration(expirationHours) * time.Hour).Unix(),
+		UserID:   userID,
+		Issuer:   issuer,
+		Audience: audience,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(expirationHours) * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Subject:   "user_authentication",
 		},
 	}
 
@@ -49,7 +55,6 @@ func GenerateJWT(userID uint, secret string, expirationHours int) (string, error
 }
 
 // ValidateJWT valide un JWT et retourne les claims contenues dans le token.
-
 func ValidateJWT(tokenStr, secret string) (*JWTClaims, error) {
 	claims := &JWTClaims{}
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
@@ -62,6 +67,12 @@ func ValidateJWT(tokenStr, secret string) (*JWTClaims, error) {
 	if !token.Valid {
 		return nil, errors.New("invalid token")
 	}
+
+	// Ajout d'une vérification supplémentaire sur l'audience et l'issuer
+	if claims.Issuer != "StudiMove" || claims.Audience != "studi_users" {
+		return nil, errors.New("invalid token claims: issuer or audience")
+	}
+
 	return claims, nil
 }
 
@@ -76,13 +87,4 @@ func GetClaimsFromContext(c *gin.Context) (*JWTClaims, error) {
 		return nil, errors.New("type de claims invalide")
 	}
 	return claims, nil
-}
-
-// ExtractUserIDFromToken extrait l'ID utilisateur depuis un token JWT valide.
-func ExtractUserIDFromToken(tokenStr, secret string) (uint, error) {
-	claims, err := ValidateJWT(tokenStr, secret)
-	if err != nil {
-		return 0, errors.New("unable to extract user ID: invalid token")
-	}
-	return claims.UserID, nil
 }

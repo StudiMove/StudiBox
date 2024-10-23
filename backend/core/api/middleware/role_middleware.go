@@ -1,37 +1,52 @@
 package middleware
 
 import (
+	"backend/core/api/response"
 	"backend/core/services/auth"
 	"backend/core/utils"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-// RoleMiddleware accepte une liste de rôles requis et vérifie si l'utilisateur a l'un de ces rôles
-func RoleMiddleware(authService *auth.AuthService, requiredRoles []string, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// RoleMiddleware vérifie si l'utilisateur a l'un des rôles requis
+func RoleMiddleware(authService *auth.AuthService, requiredRoles []string) gin.HandlerFunc {
+	return func(c *gin.Context) {
 		// Récupérer les informations de l'utilisateur à partir du contexte
-		userClaims, ok := r.Context().Value("user").(*utils.JWTClaims)
-		if !ok || userClaims == nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		claimsValue, exists := c.Get("user")
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response.ErrorResponse("Unauthorized", nil))
+			return
+		}
+
+		claims, ok := claimsValue.(*utils.JWTClaims)
+		if !ok || claims == nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response.ErrorResponse("Token is missing or invalid", nil))
 			return
 		}
 
 		// Vérifier si l'utilisateur a l'un des rôles requis
 		hasRole := false
 		for _, role := range requiredRoles {
-			hasRole, _ = authService.CheckUserRole(userClaims.UserID, role)
-			if hasRole {
+			// Vérifier si l'utilisateur a ce rôle
+			roleExists, err := authService.CheckUserRole(claims.UserID, role)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, response.ErrorResponse("Internal error checking roles", err))
+				return
+			}
+			if roleExists {
+				hasRole = true
 				break
 			}
 		}
 
 		// Si l'utilisateur n'a pas le rôle requis
 		if !hasRole {
-			http.Error(w, "Forbidden: Not access with role permission", http.StatusForbidden)
+			c.AbortWithStatusJSON(http.StatusForbidden, response.ErrorResponse("Insufficient permissions", nil))
 			return
 		}
 
-		// Si tout est bon, continuer avec la requête
-		next.ServeHTTP(w, r)
-	})
+		// Continuer la requête si tout va bien
+		c.Next()
+	}
 }

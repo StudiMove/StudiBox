@@ -70,6 +70,11 @@ func Migrate() error {
 		&models.EducationalInstitution{},
 		&models.Association{},
 		&models.Event{},
+		&models.EventLike{},
+		&models.EventView{},
+		&models.EventOption{},
+		&models.Category{},
+		&models.Tag{},
 		&models.Ticket{},
 		&models.Payment{},
 		&models.PaymentTransaction{},
@@ -78,7 +83,6 @@ func Migrate() error {
 		&models.AssociationMembership{},
 		&models.PasswordReset{},
 		&models.PointHistory{},
-		&models.EventOption{},
 	)
 	if err != nil {
 		return fmt.Errorf("❌ Échec de la migration des modèles : %v", err)
@@ -106,5 +110,61 @@ func InitRoles(db *gorm.DB) error {
 	}
 
 	log.Println("✅ Initialisation des rôles terminée avec succès.")
+	return nil
+}
+
+// InitCategories initialise les catégories de base dans la base de données
+func InitCategories(db *gorm.DB) error {
+	categories := []models.Category{
+		{Name: "Concert"},
+		{Name: "Spectacle"},
+		{Name: "Cinéma"},
+		{Name: "Théâtre"},
+		{Name: "Festival"},
+		{Name: "Exposition"},
+		{Name: "Parc d'attractions"},
+		{Name: "Soirée privée"},
+		{Name: "Stand-up"},
+	}
+
+	for _, category := range categories {
+		if err := db.FirstOrCreate(&category, models.Category{Name: category.Name}).Error; err != nil {
+			log.Printf("❌ Erreur lors de l'initialisation de la catégorie '%s' : %v", category.Name, err)
+			return err
+		}
+		log.Printf("✅ Catégorie '%s' vérifiée ou créée avec succès.", category.Name)
+	}
+
+	log.Println("✅ Initialisation de toutes les catégories de divertissement terminée avec succès.")
+	return nil
+}
+
+// InitTags initialise les tags liés au divertissement dans la base de données
+func InitTags(db *gorm.DB) error {
+	tags := []models.Tag{
+		{Name: "En plein air"},
+		{Name: "Familial"},
+		{Name: "Nocturne"},
+		{Name: "Immersif"},
+		{Name: "VIP"},
+		{Name: "Gratuit"},
+		{Name: "Payant"},
+		{Name: "Participatif"},
+		{Name: "Exclusif"},
+		{Name: "Culturel"},
+		{Name: "Gastronomique"},
+		{Name: "Déguisé"},
+		{Name: "Artisanat"},
+	}
+
+	for _, tag := range tags {
+		if err := db.FirstOrCreate(&tag, models.Tag{Name: tag.Name}).Error; err != nil {
+			log.Printf("❌ Erreur lors de l'initialisation du tag '%s' : %v", tag.Name, err)
+			return err
+		}
+		log.Printf("✅ Tag '%s' vérifié ou créé avec succès.", tag.Name)
+	}
+
+	log.Println("✅ Initialisation de tous les tags de divertissement terminée avec succès.")
 	return nil
 }

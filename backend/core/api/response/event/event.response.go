@@ -21,8 +21,8 @@ type CreateEventResponse struct {
 	Postcode    string   `json:"postcode"`
 	Region      string   `json:"region"`
 	Country     string   `json:"country"`
-	Category    string   `json:"category"`
-	Tags        string   `json:"tags"`
+	Categories  []string `json:"categories"`
+	Tags        []string `json:"tags"`
 }
 
 type GetEventResponse struct {
@@ -46,6 +46,12 @@ type GetEventResponse struct {
 	Postcode    string   `json:"postcode"`
 	Region      string   `json:"region"`
 	Country     string   `json:"country"`
-	Category    string   `json:"category"`
-	Tags        string   `json:"tags"`
+	Categories  []string `json:"categories"`
+	Tags        []string `json:"tags"`
+}
+
+type ListEventsResponse struct {
+	Events []GetEventResponse `json:"events"`
+	Page   int                `json:"page"`
+	Total  int64              `json:"total"`
 }

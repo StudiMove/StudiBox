@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterEventRoutes enregistre les routes des événements avec le service d'événements
-func RegisterEventRoutes(routerGroup *gin.RouterGroup, eventService *event.EventService) {
+// EventRoutes enregistre les routes des événements avec le service d'événements
+func EventRoutes(routerGroup *gin.RouterGroup, eventService *event.EventService) {
 	eventGroup := routerGroup.Group("/events")
 	eventGroup.Use(middleware.AuthMiddleware())
 	{
@@ -24,6 +24,21 @@ func RegisterEventRoutes(routerGroup *gin.RouterGroup, eventService *event.Event
 		})
 		eventGroup.DELETE("/:id", func(c *gin.Context) {
 			eventHandlers.HandleDeleteEvent(c, eventService)
+		})
+		eventGroup.GET("/all", func(c *gin.Context) {
+			eventHandlers.HandleListEvents(c, eventService)
+		})
+		eventGroup.GET("/recommendations", func(c *gin.Context) {
+			eventHandlers.HandleGetRecommendations(c, eventService)
+		})
+		eventGroup.POST("/like/:id", func(c *gin.Context) {
+			eventHandlers.HandleLikeEvent(c, eventService)
+		})
+		eventGroup.DELETE("/like/:id", func(c *gin.Context) {
+			eventHandlers.HandleUnlikeEvent(c, eventService)
+		})
+		eventGroup.GET("/liked", func(c *gin.Context) {
+			eventHandlers.HandleGetLikedEvents(c, eventService)
 		})
 	}
 }

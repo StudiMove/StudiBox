@@ -1,3 +1,5 @@
+// package stores
+
 package stores
 
 import (
@@ -40,10 +42,14 @@ func (s *UserStore) GetByID(id uint) (*models.User, error) {
 func (s *UserStore) GetByEmail(email string) (*models.User, error) {
 	var user models.User
 	err := s.db.Where("email = ?", email).First(&user).Error
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
+	return &user, err
+}
+
+// Récupérer tous les utilisateurs
+func (s *UserStore) GetAll() ([]models.User, error) {
+	var users []models.User
+	err := s.db.Find(&users).Error
+	return users, err
 }
 
 // Assigner un rôle à un utilisateur
