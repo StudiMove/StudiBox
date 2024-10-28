@@ -57,7 +57,7 @@ func HandleCreateEvent(c *gin.Context, eventService *event.EventService) {
 		return
 	}
 
-	resp := response.CreateEventResponse{
+	resp := response.EventResponse{
 		ID:          event.ID,
 		OwnerID:     event.OwnerID,
 		OwnerType:   event.OwnerType,
@@ -87,24 +87,21 @@ func HandleCreateEvent(c *gin.Context, eventService *event.EventService) {
 
 // HandleUpdateEvent gère la mise à jour d'un événement
 func HandleUpdateEvent(c *gin.Context, eventService *event.EventService) {
+	// Conversion de l'ID d'événement depuis le paramètre URL
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, responseGlobal.ErrorResponse("ID de l'événement invalide", err))
 		return
 	}
 
+	// Lier la requête JSON à la structure de mise à jour d'événement
 	var updateEventReq request.UpdateEventRequest
 	if err := c.ShouldBindJSON(&updateEventReq); err != nil {
 		c.JSON(http.StatusBadRequest, responseGlobal.ErrorResponse("Entrée invalide", err))
 		return
 	}
 
-	claims, err := utils.GetClaimsFromContext(c)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, responseGlobal.ErrorResponse("Jeton invalide ou expiré", err))
-		return
-	}
-
+	// Récupérer l'événement par ID
 	event, err := eventService.GetEvent(uint(id))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -115,38 +112,44 @@ func HandleUpdateEvent(c *gin.Context, eventService *event.EventService) {
 		return
 	}
 
-	if event.OwnerID != claims.UserID {
+	// Vérifier les droits de l'utilisateur
+	claims, err := utils.GetClaimsFromContext(c)
+	if err != nil || event.OwnerID != claims.UserID {
 		c.JSON(http.StatusUnauthorized, responseGlobal.ErrorResponse("Non autorisé à modifier cet événement", nil))
 		return
 	}
 
-	// Mise à jour des détails de l'événement
-	event.OwnerType = updateEventReq.OwnerType
-	event.ImageURLs = updateEventReq.ImageURLs
-	event.VideoURL = updateEventReq.VideoURL
-	event.Title = updateEventReq.Title
-	event.Subtitle = updateEventReq.Subtitle
-	event.Description = updateEventReq.Description
-	event.StartDate = updateEventReq.StartDate
-	event.EndDate = updateEventReq.EndDate
-	event.StartTime = updateEventReq.StartTime
-	event.EndTime = updateEventReq.EndTime
-	event.IsOnline = updateEventReq.IsOnline
-	event.IsVisible = updateEventReq.IsVisible
-	event.Price = updateEventReq.Price
-	event.Address = updateEventReq.Address
-	event.City = updateEventReq.City
-	event.Postcode = updateEventReq.Postcode
-	event.Region = updateEventReq.Region
-	event.Country = updateEventReq.Country
-
-	// Mettre à jour l'événement avec les nouvelles catégories et tags
-	if err := eventService.UpdateEvent(event, updateEventReq.Tags, updateEventReq.Category); err != nil {
+	// Mettre à jour l'événement en utilisant la requête
+	if err := eventService.UpdateEvent(event, updateEventReq); err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la mise à jour", err))
 		return
 	}
 
-	c.JSON(http.StatusOK, responseGlobal.SuccessResponse("Événement mis à jour avec succès", nil))
+	// Réponse après la mise à jour de l'événement
+	c.JSON(http.StatusOK, responseGlobal.SuccessResponse("Événement mis à jour avec succès", &response.EventResponse{
+		ID:          event.ID,
+		OwnerID:     event.OwnerID,
+		OwnerType:   event.OwnerType,
+		ImageURLs:   event.ImageURLs,
+		VideoURL:    event.VideoURL,
+		Title:       event.Title,
+		Subtitle:    event.Subtitle,
+		Description: event.Description,
+		StartDate:   event.StartDate,
+		EndDate:     event.EndDate,
+		StartTime:   event.StartTime,
+		EndTime:     event.EndTime,
+		IsOnline:    event.IsOnline,
+		IsVisible:   event.IsVisible,
+		Price:       event.Price,
+		Address:     event.Address,
+		City:        event.City,
+		Postcode:    event.Postcode,
+		Region:      event.Region,
+		Country:     event.Country,
+		Categories:  updateEventReq.Category,
+		Tags:        updateEventReq.Tags,
+	}))
 }
 
 // HandleDeleteEvent gère la suppression d'un événement

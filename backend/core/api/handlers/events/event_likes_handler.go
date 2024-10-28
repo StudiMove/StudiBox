@@ -27,7 +27,7 @@ func HandleGetRecommendations(c *gin.Context, eventService *event.EventService) 
 	}
 
 	// Préparer les données de réponse
-	var recommendationResponses []response.GetEventResponse
+	var recommendationResponses []response.EventResponse
 	for _, event := range recommendations {
 		// Conversion des catégories et tags en []string
 		categories := make([]string, len(event.Categories))
@@ -40,7 +40,7 @@ func HandleGetRecommendations(c *gin.Context, eventService *event.EventService) 
 			tags[i] = tag.Name
 		}
 
-		eventResp := response.GetEventResponse{
+		eventResp := response.EventResponse{
 			ID:          event.ID,
 			OwnerID:     event.OwnerID,
 			OwnerType:   event.OwnerType,
@@ -61,8 +61,8 @@ func HandleGetRecommendations(c *gin.Context, eventService *event.EventService) 
 			Postcode:    event.Postcode,
 			Region:      event.Region,
 			Country:     event.Country,
-			Categories:  categories, // Conversion en []string
-			Tags:        tags,       // Conversion en []string
+			Categories:  categories,
+			Tags:        tags,
 		}
 		recommendationResponses = append(recommendationResponses, eventResp)
 	}
@@ -127,7 +127,7 @@ func HandleGetLikedEvents(c *gin.Context, eventService *event.EventService) {
 		return
 	}
 
-	var eventResponses []response.GetEventResponse
+	var eventResponses []response.EventResponse
 	for _, event := range likedEvents {
 		// Conversion des catégories et tags en []string
 		categories := make([]string, len(event.Categories))
@@ -140,7 +140,7 @@ func HandleGetLikedEvents(c *gin.Context, eventService *event.EventService) {
 			tags[i] = tag.Name
 		}
 
-		eventResp := response.GetEventResponse{
+		eventResp := response.EventResponse{
 			ID:          event.ID,
 			OwnerID:     event.OwnerID,
 			OwnerType:   event.OwnerType,
@@ -161,8 +161,8 @@ func HandleGetLikedEvents(c *gin.Context, eventService *event.EventService) {
 			Postcode:    event.Postcode,
 			Region:      event.Region,
 			Country:     event.Country,
-			Categories:  categories, // Conversion en []string
-			Tags:        tags,       // Conversion en []string
+			Categories:  categories,
+			Tags:        tags,
 		}
 		eventResponses = append(eventResponses, eventResp)
 	}

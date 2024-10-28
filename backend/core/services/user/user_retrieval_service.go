@@ -22,6 +22,18 @@ func NewUserRetrievalService(store *stores.UserStore) *UserRetrievalService {
 	}
 }
 
+// GetUserByID récupère un utilisateur par ID
+func (s *UserRetrievalService) GetUserByID(userID uint) (*models.User, error) {
+	user, err := s.store.GetByID(userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		}
+		return nil, errors.New("error retrieving user by ID: " + err.Error())
+	}
+	return user, nil
+}
+
 // GetAllUsers récupère tous les utilisateurs
 func (s *UserRetrievalService) GetAllUsers() ([]models.User, error) {
 	users, err := s.store.GetAll()
@@ -39,18 +51,6 @@ func (s *UserRetrievalService) GetUserByEmail(email string) (*models.User, error
 			return nil, errors.New("user not found with the provided email")
 		}
 		return nil, errors.New("error retrieving user by email: " + err.Error())
-	}
-	return user, nil
-}
-
-// GetUserByID récupère un utilisateur par ID
-func (s *UserRetrievalService) GetUserByID(userID uint) (*models.User, error) {
-	user, err := s.store.GetByID(userID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("user not found")
-		}
-		return nil, errors.New("error retrieving user by ID: " + err.Error())
 	}
 	return user, nil
 }

@@ -48,3 +48,10 @@ func (s *EventLikeStore) GetLikedEventsByUserWithRelations(userID uint, likedEve
 		Preload("Categories").Preload("Tags").
 		Find(likedEvents).Error
 }
+
+// CountLikes retourne le nombre de likes pour un événement donné
+func (s *EventLikeStore) CountLikes(eventID uint) (int, error) {
+	var count int64
+	err := s.db.Model(&models.EventLike{}).Where("event_id = ?", eventID).Count(&count).Error
+	return int(count), err
+}

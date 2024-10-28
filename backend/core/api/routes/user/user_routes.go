@@ -14,27 +14,31 @@ func UserRoutes(routerGroup *gin.RouterGroup, userService *user.UserService, aut
 	userGroup.Use(middleware.AuthMiddleware())
 
 	{
-		userGroup.GET("/profile", func(c *gin.Context) {
-			userHandlers.HandleGetUserProfile(c, userService)
-		})
 
-		userGroup.PUT("/profile", func(c *gin.Context) {
-			userHandlers.HandleUpdateUserProfile(c, userService)
-		})
-
-		// Route pour récupérer un utilisateur spécifique par ID
 		userGroup.GET("/:id", func(c *gin.Context) {
-			userHandlers.HandleGetUserByID(c, userService)
+			userHandlers.HandleGetUser(c, userService)
 		})
 
-		// Route pour récupérer tous les utilisateurs (Admin seulement)
-		userGroup.GET("/all", middleware.RoleMiddleware(authService, []string{"Admin"}), func(c *gin.Context) {
+		// Les autres routes restent inchangées
+		userGroup.GET("/profile", func(c *gin.Context) {
+			userHandlers.HandleGetUser(c, userService)
+		})
+
+		// Utilisation de HandleUpdateUser pour les deux cas
+		userGroup.PUT("/profile", func(c *gin.Context) {
+			userHandlers.HandleUpdateUser(c, userService)
+		})
+
+		userGroup.GET("/all", middleware.RoleMiddleware(authService, []string{"Business"}), func(c *gin.Context) {
 			userHandlers.HandleGetAllUsers(c, userService)
 		})
 
-		// Route pour mettre à jour un utilisateur par ID (Admin seulement)
-		userGroup.PUT("/:id", middleware.RoleMiddleware(authService, []string{"Admin"}), func(c *gin.Context) {
-			userHandlers.HandleUpdateUserByID(c, userService)
+		userGroup.GET("/export/all", func(c *gin.Context) {
+			userHandlers.HandleExportUsersCSV(c, userService)
+		})
+
+		userGroup.PUT("/:id", middleware.RoleMiddleware(authService, []string{"Business"}), func(c *gin.Context) {
+			userHandlers.HandleUpdateUser(c, userService)
 		})
 	}
 }

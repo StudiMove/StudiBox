@@ -1,9 +1,8 @@
-// package stores
-
 package stores
 
 import (
 	"backend/core/models"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -35,6 +34,9 @@ func (s *UserStore) Delete(id uint) error {
 func (s *UserStore) GetByID(id uint) (*models.User, error) {
 	var user models.User
 	err := s.db.First(&user, id).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, errors.New("user not found")
+	}
 	return &user, err
 }
 
@@ -42,7 +44,16 @@ func (s *UserStore) GetByID(id uint) (*models.User, error) {
 func (s *UserStore) GetByEmail(email string) (*models.User, error) {
 	var user models.User
 	err := s.db.Where("email = ?", email).First(&user).Error
-	return &user, err
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// L'utilisateur n'existe pas, donc on retourne nil, nil
+		return nil, nil
+	}
+	if err != nil {
+		// Une erreur différente est survenue, donc on la renvoie
+		return nil, err
+	}
+	// Si l'utilisateur est trouvé, on le retourne
+	return &user, nil
 }
 
 // Récupérer tous les utilisateurs
@@ -55,4 +66,14 @@ func (s *UserStore) GetAll() ([]models.User, error) {
 // Assigner un rôle à un utilisateur
 func (s *UserStore) AssignRole(userRole *models.UserRole) error {
 	return s.db.Create(userRole).Error
+}
+
+// Précharger les rôles d'un utilisateur
+func (s *UserStore) PreloadRoles(userID uint) (*models.User, error) {
+	var user models.User
+	err := s.db.Preload("Roles").First(&user, userID).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

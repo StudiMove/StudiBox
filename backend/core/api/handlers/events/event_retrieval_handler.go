@@ -13,6 +13,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// events/handler.go
+
 // HandleGetEvent gère la récupération d'un événement par ID et enregistre une vue
 func HandleGetEvent(c *gin.Context, eventService *event.EventService) {
 	claims, err := utils.GetClaimsFromContext(c) // Récupère l'utilisateur connecté
@@ -44,6 +46,19 @@ func HandleGetEvent(c *gin.Context, eventService *event.EventService) {
 		return
 	}
 
+	// Récupérer le nombre de likes et de vues
+	likes, err := eventService.GetLikesCount(event.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la récupération des likes", err))
+		return
+	}
+
+	views, err := eventService.GetViewsCount(event.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la récupération des vues", err))
+		return
+	}
+
 	// Conversion des catégories et tags en []string
 	categories := make([]string, len(event.Categories))
 	for i, category := range event.Categories {
@@ -55,7 +70,7 @@ func HandleGetEvent(c *gin.Context, eventService *event.EventService) {
 		tags[i] = tag.Name
 	}
 
-	resp := response.GetEventResponse{
+	resp := response.EventResponse{
 		ID:          event.ID,
 		OwnerID:     event.OwnerID,
 		OwnerType:   event.OwnerType,
@@ -76,8 +91,10 @@ func HandleGetEvent(c *gin.Context, eventService *event.EventService) {
 		Postcode:    event.Postcode,
 		Region:      event.Region,
 		Country:     event.Country,
-		Categories:  categories, // Conversion en []string
-		Tags:        tags,       // Conversion en []string
+		Categories:  categories,
+		Tags:        tags,
+		Likes:       likes, // Ajout du nombre de likes
+		Views:       views, // Ajout du nombre de vues
 	}
 
 	c.JSON(http.StatusOK, responseGlobal.SuccessResponse("Événement récupéré avec succès", resp))
@@ -96,8 +113,21 @@ func HandleListEvents(c *gin.Context, eventService *event.EventService) {
 		return
 	}
 
-	var eventResponses []response.GetEventResponse
+	var eventResponses []response.EventResponse
 	for _, event := range events {
+		// Récupérer les likes et les vues pour chaque événement
+		likes, err := eventService.GetLikesCount(event.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la récupération des likes", err))
+			return
+		}
+
+		views, err := eventService.GetViewsCount(event.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la récupération des vues", err))
+			return
+		}
+
 		// Conversion des catégories et tags en []string
 		categories := make([]string, len(event.Categories))
 		for i, category := range event.Categories {
@@ -109,7 +139,7 @@ func HandleListEvents(c *gin.Context, eventService *event.EventService) {
 			tags[i] = tag.Name
 		}
 
-		eventResp := response.GetEventResponse{
+		eventResp := response.EventResponse{
 			ID:          event.ID,
 			OwnerID:     event.OwnerID,
 			OwnerType:   event.OwnerType,
@@ -130,8 +160,10 @@ func HandleListEvents(c *gin.Context, eventService *event.EventService) {
 			Postcode:    event.Postcode,
 			Region:      event.Region,
 			Country:     event.Country,
-			Categories:  categories, // Conversion en []string
-			Tags:        tags,       // Conversion en []string
+			Categories:  categories,
+			Tags:        tags,
+			Likes:       likes, // Ajout du nombre de likes
+			Views:       views, // Ajout du nombre de vues
 		}
 		eventResponses = append(eventResponses, eventResp)
 	}

@@ -9,7 +9,6 @@ import (
 type BusinessService struct {
 	Management *BusinessManagementService
 	Retrieval  *BusinessRetrievalService
-	Profile    *BusinessProfileService
 }
 
 // NewBusinessService crée une nouvelle instance de BusinessService avec ses sous-services
@@ -18,6 +17,5 @@ func NewBusinessService(db *gorm.DB) *BusinessService {
 	return &BusinessService{
 		Management: NewBusinessManagementService(store),
 		Retrieval:  NewBusinessRetrievalService(store),
-		Profile:    NewBusinessProfileService(store),
 	}
 }

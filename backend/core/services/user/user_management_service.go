@@ -55,33 +55,32 @@ func (s *UserManagementService) UpdateUserProfile(userID uint, input request.Upd
 		return errors.New("failed to retrieve user: " + err.Error())
 	}
 
-	// Mise à jour dynamique des champs non vides
-	updated := false
-	if input.FirstName != "" {
-		user.FirstName = input.FirstName
-		updated = true
-	}
-	if input.LastName != "" {
-		user.LastName = input.LastName
-		updated = true
-	}
-	if input.Email != "" {
-		user.Email = input.Email
-		updated = true
-	}
-	if input.Phone != "" {
-		user.Phone = input.Phone
-		updated = true
+	// Utiliser un map pour faire correspondre les champs à mettre à jour
+	fieldsToUpdate := map[string]interface{}{
+		"FirstName": input.FirstName,
+		"LastName":  input.LastName,
+		"Email":     input.Email,
+		"Phone":     input.Phone,
 	}
 
-	if !updated {
-		return errors.New("no fields to update")
+	// Appliquer les changements conditionnels
+	for field, value := range fieldsToUpdate {
+		if v, ok := value.(string); ok && v != "" {
+			switch field {
+			case "FirstName":
+				user.FirstName = v
+			case "LastName":
+				user.LastName = v
+			case "Email":
+				user.Email = v
+			case "Phone":
+				user.Phone = v
+			}
+		}
 	}
 
-	if err := s.store.Update(user); err != nil {
-		return errors.New("failed to update user profile: " + err.Error())
-	}
-	return nil
+	// Mise à jour dans la base de données
+	return s.store.Update(user)
 }
 
 // AssignUserRole assigne un rôle à un utilisateur
@@ -103,4 +102,20 @@ func (s *UserManagementService) AssignUserRole(userID uint, roleID uint) error {
 		return errors.New("failed to assign role: " + err.Error())
 	}
 	return nil
+}
+
+// ExtractRoleNames récupère et retourne une liste des noms de rôle pour un utilisateur en fonction de son userID
+func (s *UserManagementService) ExtractRoleNames(userID uint) ([]string, error) {
+	user, err := s.store.PreloadRoles(userID)
+	if err != nil {
+		return nil, errors.New("erreur lors de la récupération des rôles de l'utilisateur: " + err.Error())
+	}
+
+	// Extraire les noms des rôles
+	roleNames := make([]string, len(user.Roles))
+	for i, role := range user.Roles {
+		roleNames[i] = role.Name
+	}
+
+	return roleNames, nil
 }

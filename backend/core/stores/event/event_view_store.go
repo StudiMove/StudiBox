@@ -43,3 +43,9 @@ func (s *EventViewStore) GetMostViewedEventsByUser(userID uint, limit int) ([]mo
 		Find(&events).Error
 	return events, err
 }
+
+func (s *EventViewStore) CountViews(eventID uint) (int, error) {
+	var count int64
+	err := s.db.Model(&models.EventView{}).Where("event_id = ?", eventID).Count(&count).Error
+	return int(count), err
+}

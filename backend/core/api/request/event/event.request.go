@@ -35,14 +35,14 @@ type UpdateEventRequest struct {
 	EndDate     string   `json:"end_date"`
 	StartTime   string   `json:"start_time"`
 	EndTime     string   `json:"end_time"`
-	IsOnline    bool     `json:"is_online"`
-	IsVisible   bool     `json:"is_visible"`
+	IsOnline    *bool    `json:"is_online"`
+	IsVisible   *bool    `json:"is_visible"`
 	Price       int      `json:"price"`
 	Address     string   `json:"address"`
 	City        string   `json:"city"`
 	Postcode    string   `json:"postcode"`
 	Region      string   `json:"region"`
 	Country     string   `json:"country"`
-	Category    []string `json:"category"`
 	Tags        []string `json:"tags"`
+	Category    []string `json:"category"`
 }

@@ -7,7 +7,6 @@ import (
 	storesBusiness "backend/core/stores/business"
 	storesUser "backend/core/stores/user"
 	"backend/core/utils"
-	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -32,10 +31,17 @@ func NewAuthService(db *gorm.DB) *AuthService {
 
 // RegisterUser gère l'inscription d'un utilisateur standard
 func (s *AuthService) RegisterUser(user *models.User) error {
-	if err := s.checkIfEmailExists(user.Email); err != nil {
-		return fmt.Errorf("email déjà utilisé : %w", err)
+	// Vérifier si l'email existe déjà
+	existingUser, err := s.userService.Retrieval.GetUserByEmail(user.Email)
+	if err != nil {
+		return fmt.Errorf("erreur lors de la vérification de l'email : %w", err)
+	}
+	if existingUser != nil {
+		// Si l'utilisateur existe déjà, retourner une erreur
+		return fmt.Errorf("email déjà utilisé")
 	}
 
+	// Hachage du mot de passe
 	hashedPassword, err := utils.HashPassword(user.Password)
 	if err != nil {
 		return fmt.Errorf("erreur lors du hachage du mot de passe : %w", err)
@@ -47,51 +53,67 @@ func (s *AuthService) RegisterUser(user *models.User) error {
 		return fmt.Errorf("erreur lors de la création de l'utilisateur : %w", err)
 	}
 
-	// Optionnel : attribuer un rôle par défaut
+	// Récupérer l'ID du rôle "User"
 	roleID, err := s.GetRoleIDByName("User")
 	if err != nil {
 		return fmt.Errorf("erreur lors de la récupération du rôle : %w", err)
 	}
-	return s.userService.Management.AssignUserRole(user.ID, roleID) // Utilisation du service pour assigner le rôle
+
+	// Assigner le rôle à l'utilisateur (création d'une entrée dans user_roles)
+	if err := s.userService.Management.AssignUserRole(user.ID, roleID); err != nil {
+		return fmt.Errorf("erreur lors de l'attribution du rôle à l'utilisateur : %w", err)
+	}
+
+	return nil
 }
 
 // RegisterBusinessUser gère l'inscription d'un utilisateur entreprise avec gestion des transactions
 func (s *AuthService) RegisterBusinessUser(businessUser *models.BusinessUser) error {
+	// Vérifier si l'email existe déjà
+	existingUser, err := s.userService.Retrieval.GetUserByEmail(businessUser.User.Email)
+	if err != nil {
+		return fmt.Errorf("erreur lors de la vérification de l'email : %w", err)
+	}
+	if existingUser != nil {
+		return fmt.Errorf("email déjà utilisé")
+	}
+
+	// Hachage du mot de passe
+	hashedPassword, err := utils.HashPassword(businessUser.User.Password)
+	if err != nil {
+		return fmt.Errorf("erreur lors du hachage du mot de passe : %w", err)
+	}
+	businessUser.User.Password = hashedPassword
+
+	// Enregistrement de l'utilisateur et du BusinessUser
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		if err := s.checkIfEmailExists(businessUser.User.Email); err != nil {
-			return fmt.Errorf("email déjà utilisé : %w", err)
-		}
-
-		hashedPassword, err := utils.HashPassword(businessUser.User.Password)
-		if err != nil {
-			return fmt.Errorf("erreur lors du hachage du mot de passe : %w", err)
-		}
-		businessUser.User.Password = hashedPassword
-
-		// Enregistrement de l'utilisateur
 		if err := tx.Create(&businessUser.User).Error; err != nil {
 			return fmt.Errorf("erreur lors de la création de l'utilisateur : %w", err)
 		}
 
 		businessUser.UserID = businessUser.User.ID
 
-		// Enregistrer le BusinessUser
 		if err := tx.Create(businessUser).Error; err != nil {
 			return fmt.Errorf("erreur lors de la création du BusinessUser : %w", err)
 		}
 
-		// Attribuer le rôle Business à l'utilisateur
+		// Récupérer l'ID du rôle "Business"
 		businessRoleID, err := s.GetRoleIDByName("Business")
 		if err != nil {
 			return fmt.Errorf("erreur lors de la récupération du rôle 'business' : %w", err)
 		}
-		return s.userService.Management.AssignUserRole(businessUser.User.ID, businessRoleID)
+
+		// Assigner le rôle Business à l'utilisateur (création d'une entrée dans user_roles)
+		if err := s.userService.Management.AssignUserRole(businessUser.User.ID, businessRoleID); err != nil {
+			return fmt.Errorf("erreur lors de l'attribution du rôle business : %w", err)
+		}
+
+		return nil
 	})
 }
 
 // Login gère la connexion d'un utilisateur et retourne un token JWT si valide
 func (s *AuthService) Login(email, password string) (string, error) {
-	// Vérification de l'utilisateur
 	user, err := s.userService.Retrieval.GetUserByEmail(email)
 	if err != nil {
 		return "", fmt.Errorf("email ou mot de passe invalide : %w", err)
@@ -109,20 +131,6 @@ func (s *AuthService) Login(email, password string) (string, error) {
 	}
 
 	return token, nil
-}
-
-// checkIfEmailExists vérifie si l'email existe déjà
-func (s *AuthService) checkIfEmailExists(email string) error {
-	_, err := s.userService.Retrieval.GetUserByEmail(email)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		// Si l'email n'existe pas
-		return nil
-	}
-	// Si l'email existe déjà
-	if err == nil {
-		return errors.New("email déjà utilisé")
-	}
-	return fmt.Errorf("erreur lors de la vérification de l'email : %w", err)
 }
 
 // GetRoleIDByName récupère l'ID d'un rôle par son nom.
@@ -149,11 +157,23 @@ func (s *AuthService) CheckUserRole(userID uint, role string) (bool, error) {
 	return false, nil
 }
 
-// ExtractRoleNames retourne une liste des noms de rôle d'un utilisateur
-func (s *AuthService) ExtractRoleNames(roles []models.Role) []string {
-	roleNames := make([]string, len(roles))
-	for i, role := range roles {
-		roleNames[i] = role.Name
+func (s *AuthService) GetOrCreateUserByEmail(email, firstName, lastName string) (*models.User, error) {
+	user, err := s.userService.Retrieval.GetUserByEmail(email)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("failed to retrieve user by email: %w", err)
 	}
-	return roleNames
+
+	// Créer un nouvel utilisateur si non trouvé
+	if user == nil {
+		user = &models.User{
+			Email:     email,
+			FirstName: firstName,
+			LastName:  lastName,
+		}
+		if err := s.userService.Management.CreateUser(user); err != nil {
+			return nil, fmt.Errorf("failed to create user: %w", err)
+		}
+	}
+
+	return user, nil
 }

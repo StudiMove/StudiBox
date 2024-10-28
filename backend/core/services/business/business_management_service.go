@@ -23,25 +23,36 @@ func (s *BusinessManagementService) UpdateBusinessUserProfile(userID uint, input
 		return err
 	}
 
-	// Mise à jour des champs de l'objet businessUser
-	if input.CompanyName != "" {
-		businessUser.CompanyName = input.CompanyName
-	}
-	if input.Address != "" {
-		businessUser.Address = input.Address
-	}
-	if input.City != "" {
-		businessUser.City = input.City
-	}
-	if input.Postcode != "" {
-		businessUser.Postcode = input.Postcode
-	}
-	if input.Country != "" {
-		businessUser.Country = input.Country
-	}
-	if input.Phone != "" {
-		businessUser.User.Phone = input.Phone
+	// Utiliser un map pour faire correspondre les champs à mettre à jour
+	fieldsToUpdate := map[string]interface{}{
+		"CompanyName": input.CompanyName,
+		"Address":     input.Address,
+		"City":        input.City,
+		"Postcode":    input.Postcode,
+		"Country":     input.Country,
+		"Phone":       input.Phone,
 	}
 
+	// Appliquer les changements conditionnels
+	for field, value := range fieldsToUpdate {
+		if v, ok := value.(string); ok && v != "" {
+			switch field {
+			case "CompanyName":
+				businessUser.CompanyName = v
+			case "Address":
+				businessUser.Address = v
+			case "City":
+				businessUser.City = v
+			case "Postcode":
+				businessUser.Postcode = v
+			case "Country":
+				businessUser.Country = v
+			case "Phone":
+				businessUser.User.Phone = v
+			}
+		}
+	}
+
+	// Mise à jour dans la base de données
 	return s.store.Update(businessUser)
 }

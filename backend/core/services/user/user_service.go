@@ -9,7 +9,6 @@ import (
 type UserService struct {
 	Management *UserManagementService
 	Retrieval  *UserRetrievalService
-	Profile    *UserProfileService
 }
 
 // NewUserService crée une nouvelle instance de UserService avec ses sous-services
@@ -18,6 +17,5 @@ func NewUserService(db *gorm.DB) *UserService {
 	return &UserService{
 		Management: NewUserManagementService(store),
 		Retrieval:  NewUserRetrievalService(store),
-		Profile:    NewUserProfileService(store),
 	}
 }

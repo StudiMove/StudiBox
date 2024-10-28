@@ -13,6 +13,16 @@ func (s *EventService) LogEventView(userID, eventID uint) error {
 	return s.eventViewStore.AddEventView(userID, eventID)
 }
 
+// GetLikesCount récupère le nombre de likes pour un événement donné
+func (s *EventService) GetLikesCount(eventID uint) (int, error) {
+	return s.eventLikeStore.CountLikes(eventID)
+}
+
+// GetViewsCount récupère le nombre de vues pour un événement donné
+func (s *EventService) GetViewsCount(eventID uint) (int, error) {
+	return s.eventViewStore.CountViews(eventID)
+}
+
 // LikeEvent permet à un utilisateur de liker un événement
 func (s *EventService) LikeEvent(userID, eventID uint) error {
 	event, err := s.eventStore.GetByID(eventID)

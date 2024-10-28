@@ -11,8 +11,9 @@ type RegisterUserRequest struct {
 	FirstName string `json:"first_name" validate:"required"`
 	LastName  string `json:"last_name" validate:"required"`
 	Email     string `json:"email" validate:"required,email"`
-	Password  string `json:"password" validate:"required,min=6"`
+	Password  string `json:"password"`
 	Phone     string `json:"phone"`
+	IDToken   string `json:"id_token,omitempty"`
 }
 
 // RegisterBusinessRequest représente la requête pour inscrire un utilisateur entreprise

@@ -17,6 +17,10 @@ func main() {
 		log.Fatalf("Erreur lors du chargement de la configuration : %v", err)
 	}
 
+	if err := config.InitializeFirebase(); err != nil {
+		log.Fatalf("Erreur d'initialisation de Firebase : %v", err)
+	}
+
 	// Connexion à la base de données
 	if err := database.ConnectDatabase(); err != nil {
 		log.Fatalf("Échec de la connexion à la base de données : %v", err)

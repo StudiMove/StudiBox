@@ -36,7 +36,7 @@ func BusinessRoutes(routerGroup *gin.RouterGroup, businessService *business.Busi
 		})
 
 		// Route pour mettre à jour un business par ID (Admin seulement)
-		businessGroup.PUT("/:id", middleware.RoleMiddleware(authService, []string{"Admin"}), func(c *gin.Context) {
+		businessGroup.PUT("/:id", middleware.RoleMiddleware(authService, []string{"Business"}), func(c *gin.Context) {
 			businessHandlers.HandleUpdateBusiness(c, businessService, userService)
 		})
 	}

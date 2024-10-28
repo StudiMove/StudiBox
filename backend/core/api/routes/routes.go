@@ -36,7 +36,7 @@ func SetupRouter(router *gin.Engine) *gin.Engine {
 	apiGroup := router.Group("/api")
 
 	// Enregistrer les différentes routes, en passant authSvc, businessSvc, userSvc et eventSvc
-	auth_routes.AuthRoutes(apiGroup, authSvc)
+	auth_routes.AuthRoutes(apiGroup, authSvc, userSvc)
 	business_routes.BusinessRoutes(apiGroup, businessSvc, userSvc, authSvc)
 	user_routes.UserRoutes(apiGroup, userSvc, authSvc)
 	event_routes.EventRoutes(apiGroup, eventSvc)
