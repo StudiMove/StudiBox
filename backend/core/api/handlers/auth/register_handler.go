@@ -52,7 +52,7 @@ func HandleRegisterUser(c *gin.Context, authService *auth.AuthService, userServi
 	}
 
 	// Inscription de l'utilisateur
-	if err := authService.RegisterUser(&user); err != nil {
+	if err := authService.Register.RegisterUser(&user); err != nil {
 		if strings.Contains(err.Error(), "email déjà utilisé") {
 			c.JSON(http.StatusConflict, responseGlobal.ErrorResponse("Email already used", err))
 		} else {
@@ -62,7 +62,7 @@ func HandleRegisterUser(c *gin.Context, authService *auth.AuthService, userServi
 	}
 
 	// Connexion automatique après l'inscription
-	token, err := authService.Login(user.Email, registerReq.Password)
+	token, err := authService.Login.Login(user.Email, registerReq.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Failed to login after registration", err))
 		return
@@ -115,7 +115,7 @@ func HandleRegisterBusinessUser(c *gin.Context, authService *auth.AuthService, u
 	}
 
 	// Inscription de l'utilisateur business
-	if err := authService.RegisterBusinessUser(&businessUser); err != nil {
+	if err := authService.Register.RegisterBusinessUser(&businessUser); err != nil {
 		log.Printf("Erreur lors de l'enregistrement de l'utilisateur business : %v", err)
 		if strings.Contains(err.Error(), "email déjà utilisé") {
 			c.JSON(http.StatusConflict, responseGlobal.ErrorResponse("Email already used", err))
@@ -126,7 +126,7 @@ func HandleRegisterBusinessUser(c *gin.Context, authService *auth.AuthService, u
 	}
 
 	// Connexion automatique après l'inscription
-	token, err := authService.Login(businessUser.User.Email, registerReq.Password)
+	token, err := authService.Login.Login(businessUser.User.Email, registerReq.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Failed to login after registration", err))
 		return

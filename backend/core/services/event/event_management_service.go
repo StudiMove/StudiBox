@@ -1,20 +1,32 @@
-// event_management.go
 package event
 
 import (
 	request "backend/core/api/request/event"
 	"backend/core/models"
+	stores "backend/core/stores/event"
 	"encoding/json"
 	"errors"
 )
 
-// Crée un événement
-func (s *EventService) CreateEvent(event *models.Event, tagNames, categoryNames []string) error {
+type EventManagementService struct {
+	eventStore    *stores.EventStore
+	tagStore      *stores.TagStore
+	categoryStore *stores.CategoryStore
+}
+
+func NewEventManagementService(eventStore *stores.EventStore, tagStore *stores.TagStore, categoryStore *stores.CategoryStore) *EventManagementService {
+	return &EventManagementService{
+		eventStore:    eventStore,
+		tagStore:      tagStore,
+		categoryStore: categoryStore,
+	}
+}
+
+func (s *EventManagementService) CreateEvent(event *models.Event, tagNames, categoryNames []string) error {
 	if err := s.assignTagsAndCategories(event, tagNames, categoryNames); err != nil {
 		return err
 	}
 
-	// Sauvegarder les URLs des images sous format JSON
 	imageURLsJSON, err := json.Marshal(event.ImageURLs)
 	if err != nil {
 		return errors.New("erreur de conversion des URLs d'images en JSON: " + err.Error())
@@ -24,9 +36,7 @@ func (s *EventService) CreateEvent(event *models.Event, tagNames, categoryNames 
 	return s.eventStore.Create(event)
 }
 
-// UpdateEvent met à jour un événement existant de manière conditionnelle
-func (s *EventService) UpdateEvent(event *models.Event, input request.UpdateEventRequest) error {
-	// Map des champs à mettre à jour
+func (s *EventManagementService) UpdateEvent(event *models.Event, input request.UpdateEventRequest) error {
 	fieldsToUpdate := map[string]interface{}{
 		"OwnerType":   input.OwnerType,
 		"Title":       input.Title,
@@ -45,9 +55,9 @@ func (s *EventService) UpdateEvent(event *models.Event, input request.UpdateEven
 		"VideoURL":    input.VideoURL,
 	}
 
-	// Appliquer les changements conditionnels
 	for field, value := range fieldsToUpdate {
 		if v, ok := value.(string); ok && v != "" {
+			// Mise à jour des champs conditionnels
 			switch field {
 			case "OwnerType":
 				event.OwnerType = v
@@ -78,12 +88,11 @@ func (s *EventService) UpdateEvent(event *models.Event, input request.UpdateEven
 			case "VideoURL":
 				event.VideoURL = v
 			}
-		} else if p, ok := value.(int); ok && p >= 0 { // Gestion du prix, en s'assurant qu'il est non-négatif
+		} else if p, ok := value.(int); ok && p >= 0 {
 			event.Price = p
 		}
 	}
 
-	// Mise à jour des images et conversion en JSON
 	if len(input.ImageURLs) > 0 {
 		event.ImageURLs = input.ImageURLs
 		imageURLsJSON, err := json.Marshal(input.ImageURLs)
@@ -93,7 +102,6 @@ func (s *EventService) UpdateEvent(event *models.Event, input request.UpdateEven
 		event.ImageURLsJSON = string(imageURLsJSON)
 	}
 
-	// Mise à jour des booléens (IsOnline et IsVisible) avec des pointeurs pour gérer la nullabilité
 	if input.IsOnline != nil {
 		event.IsOnline = *input.IsOnline
 	}
@@ -101,27 +109,23 @@ func (s *EventService) UpdateEvent(event *models.Event, input request.UpdateEven
 		event.IsVisible = *input.IsVisible
 	}
 
-	// Mise à jour des tags et catégories uniquement si présents
 	if len(input.Tags) > 0 || len(input.Category) > 0 {
 		if err := s.assignTagsAndCategories(event, input.Tags, input.Category); err != nil {
 			return err
 		}
 	}
 
-	// Mise à jour dans la base de données
 	return s.eventStore.Update(event)
 }
 
-// Supprime un événement par ID
-func (s *EventService) DeleteEvent(id uint) error {
+func (s *EventManagementService) DeleteEvent(id uint) error {
 	if err := s.eventStore.Delete(id); err != nil {
 		return errors.New("Erreur lors de la suppression de l'événement: " + err.Error())
 	}
 	return nil
 }
 
-// Fonction pour assigner les tags et catégories à un événement
-func (s *EventService) assignTagsAndCategories(event *models.Event, tagNames, categoryNames []string) error {
+func (s *EventManagementService) assignTagsAndCategories(event *models.Event, tagNames, categoryNames []string) error {
 	for _, tagName := range tagNames {
 		tag, err := s.tagStore.FindOrCreateTag(tagName)
 		if err != nil {

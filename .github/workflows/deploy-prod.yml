@@ -1,0 +1,44 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Log in to Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build and Push Docker Images (Prod)
+        run: |
+          docker build -t myapp-backend ./backend
+          docker build -t myapp-frontend ./frontend
+          docker tag myapp-backend your-docker-repo/myapp-backend:latest
+          docker tag myapp-frontend your-docker-repo/myapp-frontend:latest
+          docker push your-docker-repo/myapp-backend:latest
+          docker push your-docker-repo/myapp-frontend:latest
+
+      - name: Deploy to Production Server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          CLOUD_HOST_PROD: ${{ secrets.CLOUD_HOST_PROD }}
+          USERNAME: ${{ secrets.USERNAME }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh -o StrictHostKeyChecking=no $USERNAME@$CLOUD_HOST_PROD << 'EOF'
+            cd /path/to/your/deployment/prod
+            docker-compose pull
+            docker-compose up -d
+          EOF

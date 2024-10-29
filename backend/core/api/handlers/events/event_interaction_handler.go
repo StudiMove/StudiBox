@@ -19,17 +19,14 @@ func HandleGetRecommendations(c *gin.Context, eventService *event.EventService) 
 		return
 	}
 
-	// Récupération des recommandations
-	recommendations, err := eventService.GetRecommendations(claims.UserID)
+	recommendations, err := eventService.Interaction.GetRecommendations(claims.UserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Impossible de générer les recommandations", err))
 		return
 	}
 
-	// Préparer les données de réponse
 	var recommendationResponses []response.EventResponse
 	for _, event := range recommendations {
-		// Conversion des catégories et tags en []string
 		categories := make([]string, len(event.Categories))
 		for i, category := range event.Categories {
 			categories[i] = category.Name
@@ -84,7 +81,7 @@ func HandleLikeEvent(c *gin.Context, eventService *event.EventService) {
 		return
 	}
 
-	if err := eventService.LikeEvent(claims.UserID, uint(eventID)); err != nil {
+	if err := eventService.Interaction.LikeEvent(claims.UserID, uint(eventID)); err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Impossible de liker l'événement", err))
 		return
 	}
@@ -106,7 +103,7 @@ func HandleUnlikeEvent(c *gin.Context, eventService *event.EventService) {
 		return
 	}
 
-	if err := eventService.UnlikeEvent(claims.UserID, uint(eventID)); err != nil {
+	if err := eventService.Interaction.UnlikeEvent(claims.UserID, uint(eventID)); err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Impossible de retirer le like", err))
 		return
 	}
@@ -121,7 +118,7 @@ func HandleGetLikedEvents(c *gin.Context, eventService *event.EventService) {
 		return
 	}
 
-	likedEvents, err := eventService.GetLikedEventsByUser(claims.UserID)
+	likedEvents, err := eventService.Retrieval.GetLikedEventsByUser(claims.UserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Impossible de récupérer les événements likés", err))
 		return

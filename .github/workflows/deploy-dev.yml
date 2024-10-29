@@ -1,0 +1,44 @@
+name: Deploy to Development
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Log in to Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build and Push Docker Images (Dev)
+        run: |
+          docker build -t myapp-backend-dev ./backend
+          docker build -t myapp-frontend-dev ./frontend
+          docker tag myapp-backend-dev your-docker-repo/myapp-backend-dev:latest
+          docker tag myapp-frontend-dev your-docker-repo/myapp-frontend-dev:latest
+          docker push your-docker-repo/myapp-backend-dev:latest
+          docker push your-docker-repo/myapp-frontend-dev:latest
+
+      - name: Deploy to Development Server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          CLOUD_HOST_DEV: ${{ secrets.CLOUD_HOST_DEV }}
+          USERNAME: ${{ secrets.USERNAME }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh -o StrictHostKeyChecking=no $USERNAME@$CLOUD_HOST_DEV << 'EOF'
+            cd /path/to/your/deployment/dev
+            docker-compose pull
+            docker-compose up -d
+          EOF

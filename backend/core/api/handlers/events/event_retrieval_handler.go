@@ -30,13 +30,13 @@ func HandleGetEvent(c *gin.Context, eventService *event.EventService) {
 	}
 
 	// Enregistre la vue de l'événement
-	if err := eventService.LogEventView(claims.UserID, uint(id)); err != nil {
+	if err := eventService.Interaction.LogEventView(claims.UserID, uint(id)); err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de l'enregistrement de la vue", err))
 		return
 	}
 
 	// Récupère l'événement
-	event, err := eventService.GetEvent(uint(id))
+	event, err := eventService.Retrieval.GetEvent(uint(id))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, responseGlobal.ErrorResponse("Événement non trouvé", err))
@@ -47,13 +47,13 @@ func HandleGetEvent(c *gin.Context, eventService *event.EventService) {
 	}
 
 	// Récupérer le nombre de likes et de vues
-	likes, err := eventService.GetLikesCount(event.ID)
+	likes, err := eventService.Interaction.GetLikesCount(event.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la récupération des likes", err))
 		return
 	}
 
-	views, err := eventService.GetViewsCount(event.ID)
+	views, err := eventService.Interaction.GetViewsCount(event.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la récupération des vues", err))
 		return
@@ -93,8 +93,8 @@ func HandleGetEvent(c *gin.Context, eventService *event.EventService) {
 		Country:     event.Country,
 		Categories:  categories,
 		Tags:        tags,
-		Likes:       likes, // Ajout du nombre de likes
-		Views:       views, // Ajout du nombre de vues
+		Likes:       likes,
+		Views:       views,
 	}
 
 	c.JSON(http.StatusOK, responseGlobal.SuccessResponse("Événement récupéré avec succès", resp))
@@ -107,7 +107,7 @@ func HandleListEvents(c *gin.Context, eventService *event.EventService) {
 	category := c.DefaultQuery("category", "")
 	city := c.DefaultQuery("city", "")
 
-	events, total, err := eventService.ListEvents(page, limit, category, city)
+	events, total, err := eventService.Retrieval.ListEvents(page, limit, category, city)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la récupération des événements", err))
 		return
@@ -116,13 +116,13 @@ func HandleListEvents(c *gin.Context, eventService *event.EventService) {
 	var eventResponses []response.EventResponse
 	for _, event := range events {
 		// Récupérer les likes et les vues pour chaque événement
-		likes, err := eventService.GetLikesCount(event.ID)
+		likes, err := eventService.Interaction.GetLikesCount(event.ID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la récupération des likes", err))
 			return
 		}
 
-		views, err := eventService.GetViewsCount(event.ID)
+		views, err := eventService.Interaction.GetViewsCount(event.ID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la récupération des vues", err))
 			return
@@ -162,8 +162,8 @@ func HandleListEvents(c *gin.Context, eventService *event.EventService) {
 			Country:     event.Country,
 			Categories:  categories,
 			Tags:        tags,
-			Likes:       likes, // Ajout du nombre de likes
-			Views:       views, // Ajout du nombre de vues
+			Likes:       likes,
+			Views:       views,
 		}
 		eventResponses = append(eventResponses, eventResp)
 	}

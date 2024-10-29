@@ -52,7 +52,7 @@ func HandleCreateEvent(c *gin.Context, eventService *event.EventService) {
 	}
 
 	// Créer l'événement avec les catégories et les tags
-	if err := eventService.CreateEvent(&event, createEventReq.Tags, createEventReq.Category); err != nil {
+	if err := eventService.Management.CreateEvent(&event, createEventReq.Tags, createEventReq.Category); err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la création de l'événement", err))
 		return
 	}
@@ -102,7 +102,7 @@ func HandleUpdateEvent(c *gin.Context, eventService *event.EventService) {
 	}
 
 	// Récupérer l'événement par ID
-	event, err := eventService.GetEvent(uint(id))
+	event, err := eventService.Retrieval.GetEvent(uint(id))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, responseGlobal.ErrorResponse("Événement non trouvé", err))
@@ -120,7 +120,7 @@ func HandleUpdateEvent(c *gin.Context, eventService *event.EventService) {
 	}
 
 	// Mettre à jour l'événement en utilisant la requête
-	if err := eventService.UpdateEvent(event, updateEventReq); err != nil {
+	if err := eventService.Management.UpdateEvent(event, updateEventReq); err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la mise à jour", err))
 		return
 	}
@@ -166,7 +166,7 @@ func HandleDeleteEvent(c *gin.Context, eventService *event.EventService) {
 		return
 	}
 
-	event, err := eventService.GetEvent(uint(id))
+	event, err := eventService.Retrieval.GetEvent(uint(id))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, responseGlobal.ErrorResponse("Événement non trouvé", err))
@@ -182,7 +182,7 @@ func HandleDeleteEvent(c *gin.Context, eventService *event.EventService) {
 	}
 
 	// Supprimer l'événement
-	if err := eventService.DeleteEvent(uint(id)); err != nil {
+	if err := eventService.Management.DeleteEvent(uint(id)); err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la suppression", err))
 		return
 	}

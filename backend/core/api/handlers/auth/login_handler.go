@@ -1,13 +1,11 @@
 package auth
 
 import (
-	"backend/config"
 	request "backend/core/api/request/auth"
 	responseGlobal "backend/core/api/response"
 	response "backend/core/api/response/auth"
 	"backend/core/services/auth"
 	"backend/core/services/user"
-	"backend/core/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +21,7 @@ func HandleLogin(c *gin.Context, authService *auth.AuthService, userService *use
 	}
 
 	// Tenter la connexion
-	token, err := authService.Login(loginReq.Email, loginReq.Password)
+	token, err := authService.Login.Login(loginReq.Email, loginReq.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, responseGlobal.ErrorResponse("Invalid email or password", err))
 		return
@@ -57,7 +55,7 @@ func HandleLogin(c *gin.Context, authService *auth.AuthService, userService *use
 	c.JSON(http.StatusOK, responseGlobal.SuccessResponse("Login successful", resp))
 }
 
-func HandleFirebaseLogin(c *gin.Context, authService *auth.AuthService) {
+func HandleFirebaseLogin(c *gin.Context, authService *auth.AuthLoginService) {
 	var loginReq struct {
 		IDToken string `json:"idToken" binding:"required"`
 	}
@@ -67,25 +65,9 @@ func HandleFirebaseLogin(c *gin.Context, authService *auth.AuthService) {
 		return
 	}
 
-	token, err := config.VerifyIDToken(loginReq.IDToken)
+	jwtToken, user, err := authService.FirebaseLogin(loginReq.IDToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, responseGlobal.ErrorResponse("Invalid Firebase ID token", err))
-		return
-	}
-
-	userEmail := token.Claims["email"].(string)
-	firstName := token.Claims["given_name"].(string)
-	lastName := token.Claims["family_name"].(string)
-
-	user, err := authService.GetOrCreateUserByEmail(userEmail, firstName, lastName)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Failed to retrieve or create user", err))
-		return
-	}
-
-	jwtToken, err := utils.GenerateJWT(user.ID, config.AppConfig.JwtSecretAccessKey, "StudiMove", "studi_users", 72)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Failed to generate token", err))
 		return
 	}
 

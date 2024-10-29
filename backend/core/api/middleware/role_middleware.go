@@ -29,7 +29,7 @@ func RoleMiddleware(authService *auth.AuthService, requiredRoles []string) gin.H
 		hasRole := false
 		for _, role := range requiredRoles {
 			// Vérifier si l'utilisateur a ce rôle
-			roleExists, err := authService.CheckUserRole(claims.UserID, role)
+			roleExists, err := authService.Role.CheckUserRole(claims.UserID, role)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, response.ErrorResponse("Internal error checking roles", err))
 				return

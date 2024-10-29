@@ -5,6 +5,7 @@ import (
 	stores "backend/core/stores/user"
 	"backend/core/utils"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -79,4 +80,24 @@ func (s *UserRetrievalService) GetUserIDFromRequest(c *gin.Context) (uint, error
 		return 0, errors.New("invalid token structure")
 	}
 	return claims.UserID, nil
+}
+
+func (s *UserRetrievalService) GetOrCreateUserByEmail(email, firstName, lastName string) (*models.User, error) {
+	user, err := s.store.GetByEmail(email)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("failed to retrieve user by email: %w", err)
+	}
+
+	if user == nil {
+		user = &models.User{
+			Email:     email,
+			FirstName: firstName,
+			LastName:  lastName,
+		}
+		if err := s.store.Create(user); err != nil {
+			return nil, fmt.Errorf("failed to create user: %w", err)
+		}
+	}
+
+	return user, nil
 }

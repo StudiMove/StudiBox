@@ -1,4 +1,3 @@
-// event_service.go
 package event
 
 import (
@@ -7,22 +6,24 @@ import (
 	"gorm.io/gorm"
 )
 
-// EventService gère les opérations liées aux événements
+// EventService regroupe les services de gestion, récupération et interactions des événements
 type EventService struct {
-	eventStore     *stores.EventStore
-	eventLikeStore *stores.EventLikeStore
-	eventViewStore *stores.EventViewStore
-	tagStore       *stores.TagStore
-	categoryStore  *stores.CategoryStore
+	Management  *EventManagementService
+	Retrieval   *EventRetrievalService
+	Interaction *EventInteractionService
 }
 
-// NewEventService crée une nouvelle instance de EventService
+// NewEventService crée une nouvelle instance de EventService avec ses sous-services
 func NewEventService(db *gorm.DB) *EventService {
+	eventStore := stores.NewEventStore(db)
+	tagStore := stores.NewTagStore(db)
+	categoryStore := stores.NewCategoryStore(db)
+	eventLikeStore := stores.NewEventLikeStore(db)
+	eventViewStore := stores.NewEventViewStore(db)
+
 	return &EventService{
-		eventStore:     stores.NewEventStore(db),
-		eventLikeStore: stores.NewEventLikeStore(db),
-		eventViewStore: stores.NewEventViewStore(db),
-		tagStore:       stores.NewTagStore(db),
-		categoryStore:  stores.NewCategoryStore(db),
+		Management:  NewEventManagementService(eventStore, tagStore, categoryStore),
+		Retrieval:   NewEventRetrievalService(eventStore, eventLikeStore),
+		Interaction: NewEventInteractionService(eventStore, eventLikeStore, eventViewStore),
 	}
 }

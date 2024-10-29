@@ -1,30 +1,41 @@
-// event_likes.go
 package event
 
 import (
 	"backend/core/models"
+	stores "backend/core/stores/event"
 	"errors"
+	"sort"
 
 	"gorm.io/gorm"
 )
 
-// LogEventView permet de loguer une vue pour un événement
-func (s *EventService) LogEventView(userID, eventID uint) error {
+type EventInteractionService struct {
+	eventStore     *stores.EventStore
+	eventLikeStore *stores.EventLikeStore
+	eventViewStore *stores.EventViewStore
+}
+
+func NewEventInteractionService(eventStore *stores.EventStore, eventLikeStore *stores.EventLikeStore, eventViewStore *stores.EventViewStore) *EventInteractionService {
+	return &EventInteractionService{
+		eventStore:     eventStore,
+		eventLikeStore: eventLikeStore,
+		eventViewStore: eventViewStore,
+	}
+}
+
+func (s *EventInteractionService) LogEventView(userID, eventID uint) error {
 	return s.eventViewStore.AddEventView(userID, eventID)
 }
 
-// GetLikesCount récupère le nombre de likes pour un événement donné
-func (s *EventService) GetLikesCount(eventID uint) (int, error) {
+func (s *EventInteractionService) GetLikesCount(eventID uint) (int, error) {
 	return s.eventLikeStore.CountLikes(eventID)
 }
 
-// GetViewsCount récupère le nombre de vues pour un événement donné
-func (s *EventService) GetViewsCount(eventID uint) (int, error) {
+func (s *EventInteractionService) GetViewsCount(eventID uint) (int, error) {
 	return s.eventViewStore.CountViews(eventID)
 }
 
-// LikeEvent permet à un utilisateur de liker un événement
-func (s *EventService) LikeEvent(userID, eventID uint) error {
+func (s *EventInteractionService) LikeEvent(userID, eventID uint) error {
 	event, err := s.eventStore.GetByID(eventID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -40,8 +51,7 @@ func (s *EventService) LikeEvent(userID, eventID uint) error {
 	return s.eventLikeStore.LikeEvent(userID, eventID)
 }
 
-// UnlikeEvent permet à un utilisateur de retirer son like d'un événement
-func (s *EventService) UnlikeEvent(userID, eventID uint) error {
+func (s *EventInteractionService) UnlikeEvent(userID, eventID uint) error {
 	_, err := s.eventStore.GetByID(eventID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -53,14 +63,11 @@ func (s *EventService) UnlikeEvent(userID, eventID uint) error {
 	return s.eventLikeStore.UnlikeEvent(userID, eventID)
 }
 
-// GetRecommendations récupère des événements recommandés pour un utilisateur
-func (s *EventService) GetRecommendations(userID uint) ([]models.Event, error) {
+func (s *EventInteractionService) GetRecommendations(userID uint) ([]models.Event, error) {
 	var likedEvents []models.Event
-	err := s.eventLikeStore.GetLikedEventsByUserWithRelations(userID, &likedEvents)
-	if err != nil {
+	if err := s.eventLikeStore.GetLikedEventsByUserWithRelations(userID, &likedEvents); err != nil {
 		return nil, errors.New("impossible de récupérer les événements likés")
 	}
-
 	viewedEvents, err := s.eventViewStore.GetMostViewedEventsByUser(userID, 5)
 	if err != nil {
 		return nil, errors.New("impossible de récupérer les événements vus")
@@ -69,25 +76,56 @@ func (s *EventService) GetRecommendations(userID uint) ([]models.Event, error) {
 	tags := s.extractTagsFromEvents(likedEvents, viewedEvents)
 	categories := s.extractCategoriesFromEvents(likedEvents, viewedEvents)
 
-	recommendedEvents, err := s.eventStore.GetRecommendedEventsByTags(tags, categories, nil, 5)
+	recommendedEvents, err := s.eventStore.GetRecommendedEventsByTags(tags, categories, nil, 10)
 	if err != nil {
 		return nil, errors.New("impossible de récupérer les événements recommandés")
 	}
 
-	popularEvents, err := s.eventStore.GetPopularEvents(5)
-	if err != nil {
-		return nil, errors.New("impossible de récupérer les événements populaires")
+	eventScores := s.calculateScores(likedEvents, viewedEvents, recommendedEvents)
+
+	sortedEvents := s.sortEventsByScore(eventScores)
+
+	if len(sortedEvents) > 5 {
+		sortedEvents = sortedEvents[:5]
 	}
 
-	allEvents := append(likedEvents, viewedEvents...)
-	allEvents = append(allEvents, recommendedEvents...)
-	allEvents = append(allEvents, popularEvents...)
-
-	return s.removeDuplicateEvents(allEvents), nil
+	return sortedEvents, nil
 }
 
-// Fonction pour extraire les tags des événements likés et vus
-func (s *EventService) extractTagsFromEvents(likedEvents, viewedEvents []models.Event) []string {
+func (s *EventInteractionService) calculateScores(likedEvents, viewedEvents, recommendedEvents []models.Event) map[uint]int {
+	eventScores := make(map[uint]int)
+
+	for _, event := range likedEvents {
+		eventScores[event.ID] += 3
+	}
+
+	for _, event := range viewedEvents {
+		eventScores[event.ID] += 1
+	}
+
+	for _, event := range recommendedEvents {
+		eventScores[event.ID] += 2
+	}
+
+	return eventScores
+}
+
+func (s *EventInteractionService) sortEventsByScore(eventScores map[uint]int) []models.Event {
+	var sortedEvents []models.Event
+	for eventID := range eventScores {
+		if event, err := s.eventStore.GetByID(eventID); err == nil {
+			sortedEvents = append(sortedEvents, *event)
+		}
+	}
+
+	sort.SliceStable(sortedEvents, func(i, j int) bool {
+		return eventScores[sortedEvents[i].ID] > eventScores[sortedEvents[j].ID]
+	})
+
+	return sortedEvents
+}
+
+func (s *EventInteractionService) extractTagsFromEvents(likedEvents, viewedEvents []models.Event) []string {
 	tagSet := make(map[string]struct{})
 	for _, event := range append(likedEvents, viewedEvents...) {
 		for _, tag := range event.Tags {
@@ -101,8 +139,7 @@ func (s *EventService) extractTagsFromEvents(likedEvents, viewedEvents []models.
 	return tags
 }
 
-// Fonction pour extraire les catégories des événements likés et vus
-func (s *EventService) extractCategoriesFromEvents(likedEvents, viewedEvents []models.Event) []string {
+func (s *EventInteractionService) extractCategoriesFromEvents(likedEvents, viewedEvents []models.Event) []string {
 	categorySet := make(map[string]struct{})
 	for _, event := range append(likedEvents, viewedEvents...) {
 		for _, category := range event.Categories {
@@ -114,18 +151,4 @@ func (s *EventService) extractCategoriesFromEvents(likedEvents, viewedEvents []m
 		categories = append(categories, category)
 	}
 	return categories
-}
-
-// RemoveDuplicateEvents supprime les événements dupliqués
-func (s *EventService) removeDuplicateEvents(events []models.Event) []models.Event {
-	eventMap := make(map[uint]bool)
-	uniqueEvents := []models.Event{}
-
-	for _, event := range events {
-		if !eventMap[event.ID] {
-			eventMap[event.ID] = true
-			uniqueEvents = append(uniqueEvents, event)
-		}
-	}
-	return uniqueEvents
 }
