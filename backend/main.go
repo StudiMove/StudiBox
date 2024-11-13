@@ -32,17 +32,17 @@ func main() {
 	}
 
 	// Initialiser les rôles après la migration des modèles
-	if err := database.InitRoles(database.DB); err != nil {
+	if err := database.InitRoles(); err != nil {
 		log.Fatalf("Échec de l'initialisation des rôles : %v", err)
 	}
 
 	// Initialiser les catégories après la migration des modèles
-	if err := database.InitCategories(database.DB); err != nil {
+	if err := database.InitCategories(); err != nil {
 		log.Fatalf("Échec de l'initialisation des catégories: %v", err)
 	}
 
 	// Initialiser les tags après la migration des modèles
-	if err := database.InitTags(database.DB); err != nil {
+	if err := database.InitTags(); err != nil {
 		log.Fatalf("Échec de l'initialisation des tags : %v", err)
 	}
 

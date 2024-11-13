@@ -2,145 +2,310 @@ package event
 
 import (
 	request "backend/core/api/request/event"
-	"backend/core/models"
 	stores "backend/core/stores/event"
-	"encoding/json"
+	"backend/database/models"
 	"errors"
+	"fmt"
+
+	"github.com/lib/pq"
+	"gorm.io/gorm"
 )
 
-type EventManagementService struct {
-	eventStore    *stores.EventStore
-	tagStore      *stores.TagStore
-	categoryStore *stores.CategoryStore
+type EventManagementServiceType struct {
+	eventStore       *stores.EventStoreType
+	tagStore         *stores.EventTagStoreType
+	categoryStore    *stores.EventCategoryStoreType
+	tarifStore       *stores.EventTarifStoreType
+	optionStore      *stores.EventOptionStoreType
+	descriptionStore *stores.EventDescriptionStoreType
 }
 
-func NewEventManagementService(eventStore *stores.EventStore, tagStore *stores.TagStore, categoryStore *stores.CategoryStore) *EventManagementService {
-	return &EventManagementService{
-		eventStore:    eventStore,
-		tagStore:      tagStore,
-		categoryStore: categoryStore,
+func EventManagementService(
+	eventStore *stores.EventStoreType,
+	tagStore *stores.EventTagStoreType,
+	categoryStore *stores.EventCategoryStoreType,
+	tarifStore *stores.EventTarifStoreType,
+	optionStore *stores.EventOptionStoreType,
+	descriptionStore *stores.EventDescriptionStoreType,
+) *EventManagementServiceType {
+	return &EventManagementServiceType{
+		eventStore:       eventStore,
+		tagStore:         tagStore,
+		categoryStore:    categoryStore,
+		tarifStore:       tarifStore,
+		optionStore:      optionStore,
+		descriptionStore: descriptionStore,
 	}
 }
 
-func (s *EventManagementService) CreateEvent(event *models.Event, tagNames, categoryNames []string) error {
-	if err := s.assignTagsAndCategories(event, tagNames, categoryNames); err != nil {
+func (s *EventManagementServiceType) DeleteEvent(eventID uint, userID uint, role string) error {
+	// Récupérer l'événement par son ID
+	event, err := s.eventStore.GetByID(eventID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return gorm.ErrRecordNotFound // Renvoie une erreur spécifique
+		}
+		return fmt.Errorf("erreur lors de la récupération de l'événement : %w", err)
+	}
+
+	// Vérifier si l'utilisateur est Admin ou est le propriétaire de l'événement
+	if role != "Admin" && event.OwnerID != userID {
+		return errors.New("non autorisé à supprimer cet événement")
+	}
+
+	// Démarrer une transaction
+	tx := s.eventStore.GetDB().Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Supprimer les descriptions associées
+	if err := s.descriptionStore.DeleteByEventIDWithTx(eventID, tx); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("erreur lors de la suppression des descriptions : %w", err)
+	}
+
+	// Supprimer les options associées
+	if err := s.optionStore.DeleteByEventIDWithTx(eventID, tx); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("erreur lors de la suppression des options : %w", err)
+	}
+
+	// Supprimer les tarifs associés
+	if err := s.tarifStore.DeleteByEventIDWithTx(eventID, tx); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("erreur lors de la suppression des tarifs : %w", err)
+	}
+
+	// Supprimer l'événement lui-même
+	if err := s.eventStore.DeleteWithTx(eventID, tx); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("erreur lors de la suppression de l'événement : %w", err)
+	}
+
+	// Commit de la transaction
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("erreur lors du commit de la transaction : %w", err)
+	}
+
+	return nil
+}
+
+func (s *EventManagementServiceType) CreateEvent(event *models.Event, input request.CreateEventRequest) error {
+	event.VideoURL = input.VideoURL
+	event.Title = input.Title
+	event.Subtitle = input.Subtitle
+	event.StartDate = input.StartDate
+	event.EndDate = input.EndDate
+	event.StartTime = input.StartTime
+	event.EndTime = input.EndTime
+	event.IsOnline = input.IsOnline
+	event.IsPublic = input.IsPublic
+	event.Address = input.Address
+	event.City = input.City
+	event.PostalCode = input.PostalCode
+	event.Region = input.Region
+	event.Country = input.Country
+	event.UseStudibox = input.UseStudibox
+	event.CategoryIDs = pq.Int64Array(input.CategoryIDs)
+	event.TagIDs = pq.Int64Array(input.TagIDs)
+
+	if err := s.eventStore.Create(event); err != nil {
+		return errors.New("erreur lors de la création de l'événement : " + err.Error())
+	}
+
+	if err := s.manageOptionsForEvent(event.ID, input.Options, false); err != nil {
+		return err
+	}
+	if err := s.manageTarifsForEvent(event.ID, input.Tarifs, false); err != nil {
+		return err
+	}
+	if err := s.manageDescriptionsForEvent(event.ID, input.Descriptions, false); err != nil {
 		return err
 	}
 
-	imageURLsJSON, err := json.Marshal(event.ImageURLs)
-	if err != nil {
-		return errors.New("erreur de conversion des URLs d'images en JSON: " + err.Error())
-	}
-	event.ImageURLsJSON = string(imageURLsJSON)
-
-	return s.eventStore.Create(event)
+	return nil
 }
 
-func (s *EventManagementService) UpdateEvent(event *models.Event, input request.UpdateEventRequest) error {
-	fieldsToUpdate := map[string]interface{}{
-		"OwnerType":   input.OwnerType,
-		"Title":       input.Title,
-		"Subtitle":    input.Subtitle,
-		"Description": input.Description,
-		"StartDate":   input.StartDate,
-		"EndDate":     input.EndDate,
-		"StartTime":   input.StartTime,
-		"EndTime":     input.EndTime,
-		"Price":       input.Price,
-		"Address":     input.Address,
-		"City":        input.City,
-		"Postcode":    input.Postcode,
-		"Region":      input.Region,
-		"Country":     input.Country,
-		"VideoURL":    input.VideoURL,
+func (s *EventManagementServiceType) UpdateEvent(event *models.Event, input request.UpdateEventRequest) error {
+	// Met à jour les champs de base de l'événement
+	if err := s.updateEventFields(event, input); err != nil {
+		return err
 	}
 
-	for field, value := range fieldsToUpdate {
-		if v, ok := value.(string); ok && v != "" {
-			// Mise à jour des champs conditionnels
-			switch field {
-			case "OwnerType":
-				event.OwnerType = v
-			case "Title":
-				event.Title = v
-			case "Subtitle":
-				event.Subtitle = v
-			case "Description":
-				event.Description = v
-			case "StartDate":
-				event.StartDate = v
-			case "EndDate":
-				event.EndDate = v
-			case "StartTime":
-				event.StartTime = v
-			case "EndTime":
-				event.EndTime = v
-			case "Address":
-				event.Address = v
-			case "City":
-				event.City = v
-			case "Postcode":
-				event.Postcode = v
-			case "Region":
-				event.Region = v
-			case "Country":
-				event.Country = v
-			case "VideoURL":
-				event.VideoURL = v
-			}
-		} else if p, ok := value.(int); ok && p >= 0 {
-			event.Price = p
-		}
+	// Mise à jour de l'image si une URL est fournie
+	if input.ImageURL != "" {
+		event.ImageURL = input.ImageURL
 	}
 
-	if len(input.ImageURLs) > 0 {
-		event.ImageURLs = input.ImageURLs
-		imageURLsJSON, err := json.Marshal(input.ImageURLs)
-		if err != nil {
-			return errors.New("erreur de conversion des URLs d'images en JSON: " + err.Error())
-		}
-		event.ImageURLsJSON = string(imageURLsJSON)
+	if err := s.manageOptionsForEvent(event.ID, input.Options, true); err != nil {
+		return err
+	}
+	if err := s.manageTarifsForEvent(event.ID, input.Tarifs, true); err != nil {
+		return err
+	}
+	if err := s.manageDescriptionsForEvent(event.ID, input.Descriptions, true); err != nil {
+		return err
 	}
 
-	if input.IsOnline != nil {
-		event.IsOnline = *input.IsOnline
-	}
-	if input.IsVisible != nil {
-		event.IsVisible = *input.IsVisible
-	}
+	// Enregistre les modifications
+	return s.eventStore.Update(event)
+}
 
-	if len(input.Tags) > 0 || len(input.Category) > 0 {
-		if err := s.assignTagsAndCategories(event, input.Tags, input.Category); err != nil {
-			return err
-		}
-	}
+func (s *EventManagementServiceType) updateEventFields(event *models.Event, input request.UpdateEventRequest) error {
+	event.Title = input.Title
+	event.Subtitle = input.Subtitle
+	event.StartDate = input.StartDate
+	event.EndDate = input.EndDate
+	event.StartTime = input.StartTime
+	event.EndTime = input.EndTime
+	event.Address = input.Address
+	event.City = input.City
+	event.PostalCode = input.PostalCode
+	event.Region = input.Region
+	event.Country = input.Country
+	event.VideoURL = input.VideoURL
+	event.CategoryIDs = pq.Int64Array(input.CategoryIDs)
+	event.TagIDs = pq.Int64Array(input.TagIDs)
 
 	return s.eventStore.Update(event)
 }
 
-func (s *EventManagementService) DeleteEvent(id uint) error {
-	if err := s.eventStore.Delete(id); err != nil {
-		return errors.New("Erreur lors de la suppression de l'événement: " + err.Error())
+func (s *EventManagementServiceType) manageTarifsForEvent(eventID uint, tarifs []request.EventTarifRequest, isUpdate bool) error {
+	if isUpdate {
+		currentTarifs, err := s.tarifStore.GetByEventID(eventID)
+		if err != nil {
+			return errors.New("erreur lors de la récupération des tarifs actuels")
+		}
+		for _, newTarif := range tarifs {
+			exists := false
+			for _, currentTarif := range currentTarifs {
+				if currentTarif.ID == newTarif.ID {
+					currentTarif.Title = newTarif.Title
+					currentTarif.Description = newTarif.Description
+					currentTarif.Price = newTarif.Price
+					currentTarif.Stock = newTarif.Stock
+					s.tarifStore.Update(&currentTarif)
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				eventTarif := models.EventTarif{
+					EventID:     eventID,
+					Title:       newTarif.Title,
+					Description: newTarif.Description,
+					Price:       newTarif.Price,
+					Stock:       newTarif.Stock,
+				}
+				s.tarifStore.Create(&eventTarif)
+			}
+		}
+	} else {
+		for _, tarif := range tarifs {
+			eventTarif := models.EventTarif{
+				EventID:     eventID,
+				Title:       tarif.Title,
+				Description: tarif.Description,
+				Price:       tarif.Price,
+				Stock:       tarif.Stock,
+			}
+			if err := s.tarifStore.Create(&eventTarif); err != nil {
+				return errors.New("erreur lors de l'ajout des tarifs à l'événement : " + err.Error())
+			}
+		}
 	}
 	return nil
 }
 
-func (s *EventManagementService) assignTagsAndCategories(event *models.Event, tagNames, categoryNames []string) error {
-	for _, tagName := range tagNames {
-		tag, err := s.tagStore.FindOrCreateTag(tagName)
+func (s *EventManagementServiceType) manageOptionsForEvent(eventID uint, options []request.EventOptionRequest, isUpdate bool) error {
+	if isUpdate {
+		currentOptions, err := s.optionStore.GetByEventID(eventID)
 		if err != nil {
-			return err
+			return errors.New("erreur lors de la récupération des options actuelles")
 		}
-		event.Tags = append(event.Tags, *tag)
+		for _, newOption := range options {
+			exists := false
+			for _, currentOption := range currentOptions {
+				if currentOption.ID == newOption.ID {
+					currentOption.Title = newOption.Title
+					currentOption.Description = newOption.Description
+					currentOption.Price = newOption.Price
+					currentOption.Stock = newOption.Stock
+					s.optionStore.Update(&currentOption)
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				option := models.EventOption{
+					EventID:     eventID,
+					Title:       newOption.Title,
+					Description: newOption.Description,
+					Price:       newOption.Price,
+					Stock:       newOption.Stock,
+				}
+				s.optionStore.Create(&option)
+			}
+		}
+	} else {
+		for _, option := range options {
+			eventOption := models.EventOption{
+				EventID:     eventID,
+				Title:       option.Title,
+				Description: option.Description,
+				Price:       option.Price,
+				Stock:       option.Stock,
+			}
+			if err := s.optionStore.Create(&eventOption); err != nil {
+				return errors.New("erreur lors de l'ajout des options à l'événement : " + err.Error())
+			}
+		}
 	}
+	return nil
+}
 
-	for _, categoryName := range categoryNames {
-		category, err := s.categoryStore.FindOrCreateCategory(categoryName)
+func (s *EventManagementServiceType) manageDescriptionsForEvent(eventID uint, descriptions []request.EventDescriptionRequest, isUpdate bool) error {
+	if isUpdate {
+		currentDescriptions, err := s.descriptionStore.GetByEventID(eventID)
 		if err != nil {
-			return err
+			return errors.New("erreur lors de la récupération des descriptions actuelles")
 		}
-		event.Categories = append(event.Categories, *category)
+		descriptionMap := make(map[uint]*models.EventDescription)
+		for i := range currentDescriptions {
+			descriptionMap[currentDescriptions[i].ID] = &currentDescriptions[i]
+		}
+		for _, newDesc := range descriptions {
+			if existingDesc, exists := descriptionMap[newDesc.ID]; exists {
+				existingDesc.Title = newDesc.Title
+				existingDesc.Description = newDesc.Description
+				if err := s.descriptionStore.Update(existingDesc); err != nil {
+					return errors.New("erreur lors de la mise à jour des descriptions de l'événement : " + err.Error())
+				}
+				delete(descriptionMap, newDesc.ID)
+			} else {
+				eventDescription := models.EventDescription{
+					EventID:     eventID,
+					Title:       newDesc.Title,
+					Description: newDesc.Description,
+				}
+				s.descriptionStore.Create(&eventDescription)
+			}
+		}
+		for _, descToDelete := range descriptionMap {
+			s.descriptionStore.Delete(descToDelete.ID)
+		}
+	} else {
+		for _, desc := range descriptions {
+			eventDescription := models.EventDescription{
+				EventID:     eventID,
+				Title:       desc.Title,
+				Description: desc.Description,
+			}
+			s.descriptionStore.Create(&eventDescription)
+		}
 	}
-
 	return nil
 }

@@ -1,60 +1,96 @@
-package stores
+package event
 
 import (
-	"backend/core/models"
+	"backend/database/models"
+	"errors"
 
 	"gorm.io/gorm"
 )
 
-type EventStore struct {
+type EventStoreType struct {
 	db *gorm.DB
 }
 
-func NewEventStore(db *gorm.DB) *EventStore {
-	return &EventStore{db: db}
+func EventStore(db *gorm.DB) *EventStoreType {
+	return &EventStoreType{db: db}
 }
 
-// Créer un événement avec les relations de tags et catégories
-func (s *EventStore) Create(event *models.Event) error {
+// Accéder à la base de données depuis le store
+func (s *EventStoreType) GetDB() *gorm.DB {
+	return s.db
+}
+
+func (s *EventStoreType) Create(event *models.Event) error {
 	return s.db.Create(event).Error
 }
 
-// Mettre à jour un événement
-func (s *EventStore) Update(event *models.Event) error {
+func (s *EventStoreType) Update(event *models.Event) error {
 	return s.db.Save(event).Error
 }
 
-// Supprimer un événement
-func (s *EventStore) Delete(id uint) error {
+func (s *EventStoreType) Delete(id uint) error {
 	return s.db.Delete(&models.Event{}, id).Error
 }
 
-// Récupérer un événement avec les relations
-func (s *EventStore) GetByID(id uint) (*models.Event, error) {
-	var event models.Event
-	err := s.db.Preload("Categories").Preload("Tags").First(&event, id).Error
-	return &event, err
+func (s *EventStoreType) DeleteWithTx(eventID uint, tx *gorm.DB) error {
+	if err := tx.Delete(&models.Event{}, eventID).Error; err != nil {
+		return errors.New("Erreur lors de la suppression de l'événement : " + err.Error())
+	}
+	return nil
 }
 
-// Liste des événements avec filtres
-func (s *EventStore) List(page, limit int, category, city string) ([]models.Event, int64, error) {
+func (s *EventStoreType) GetByID(id uint) (*models.Event, error) {
+	var event models.Event
+	err := s.db.
+		Preload("Categories").
+		Preload("Tags").
+		Preload("Options").
+		Preload("Tarifs").
+		Preload("Descriptions").
+		First(&event, id).
+		Error
+	if err != nil {
+		return nil, err
+	}
+	return &event, nil
+}
+
+func (s *EventStoreType) List(page, limit int, category, city string) ([]models.Event, int64, error) {
 	var events []models.Event
 	var total int64
-	query := s.db.Model(&models.Event{}).Limit(limit).Offset((page - 1) * limit)
+
+	query := s.db.Model(&models.Event{}).
+		Limit(limit).
+		Offset((page - 1) * limit).
+		Preload("Categories.Category").
+		Preload("Tags.Tag")
 
 	if category != "" {
-		query = query.Joins("JOIN event_categories ON events.id = event_categories.event_id").Where("event_categories.name = ?", category)
+		query = query.Joins("JOIN event_categories ON events.id = event_categories.event_id").
+			Joins("JOIN categories ON event_categories.event_category_id = categories.id").
+			Where("categories.name = ?", category)
 	}
 	if city != "" {
 		query = query.Where("city = ?", city)
 	}
 
-	err := query.Preload("Categories").Preload("Tags").Find(&events).Count(&total).Error
+	err := query.Find(&events).Count(&total).Error
 	return events, total, err
 }
 
-// GetPopularEvents récupère les événements les plus populaires (par nombre de likes)
-func (s *EventStore) GetPopularEvents(limit int) ([]models.Event, error) {
+func (s *EventStoreType) GetLikedEventsByUser(userID uint) ([]models.Event, error) {
+	var likedEvents []models.Event
+	err := s.db.
+		Joins("JOIN event_likes ON events.id = event_likes.event_id").
+		Where("event_likes.user_id = ?", userID).
+		Preload("Categories.Category").
+		Preload("Tags.Tag").
+		Find(&likedEvents).
+		Error
+	return likedEvents, err
+}
+
+func (s *EventStoreType) GetPopularEvents(limit int) ([]models.Event, error) {
 	var popularEvents []models.Event
 	err := s.db.
 		Joins("LEFT JOIN event_likes ON events.id = event_likes.event_id").
@@ -62,24 +98,27 @@ func (s *EventStore) GetPopularEvents(limit int) ([]models.Event, error) {
 		Group("events.id").
 		Order("like_count DESC").
 		Limit(limit).
-		Preload("Tags").Preload("Categories").
-		Find(&popularEvents).Error
+		Preload("Tags.Tag").
+		Preload("Categories.Category").
+		Find(&popularEvents).
+		Error
 	return popularEvents, err
 }
 
-// GetRecommendedEventsByTags récupère les événements recommandés en fonction des tags et des catégories
-func (s *EventStore) GetRecommendedEventsByTags(tags, categories []string, excludedEventIDs []uint, limit int) ([]models.Event, error) {
+func (s *EventStoreType) GetRecommendedEventsByTags(tags, categories []string, excludedEventIDs []uint, limit int) ([]models.Event, error) {
 	var recommendedEvents []models.Event
 	err := s.db.
-		Joins("JOIN event_tags ON events.id = event_tags.event_id").
-		Joins("JOIN tags ON event_tags.tag_id = tags.id").
-		Joins("JOIN event_categories ON events.id = event_categories.event_id").
-		Joins("JOIN categories ON event_categories.category_id = categories.id").
-		Where("tags.name IN (?) OR categories.name IN (?)", tags, categories).
+		Joins("JOIN event_event_tags ON events.id = event_event_tags.event_id").
+		Joins("JOIN event_tags ON event_event_tags.event_tag_id = event_tags.id").
+		Joins("JOIN event_event_categories ON events.id = event_event_categories.event_id").
+		Joins("JOIN event_categories ON event_event_categories.event_category_id = event_categories.id").
+		Where("event_tags.name IN (?) OR event_categories.name IN (?)", tags, categories).
 		Where("events.id NOT IN (?)", excludedEventIDs).
 		Group("events.id").
 		Limit(limit).
-		Preload("Tags").Preload("Categories").
-		Find(&recommendedEvents).Error
+		Preload("Tags").
+		Preload("Categories").
+		Find(&recommendedEvents).
+		Error
 	return recommendedEvents, err
 }

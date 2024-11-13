@@ -1,30 +1,27 @@
 package auth
 
 import (
-	"backend/core/services/user"
-	storesBusiness "backend/core/stores/business"
+	serviceUser "backend/core/services/user"
+	storesOwner "backend/core/stores/owner"
 	storesUser "backend/core/stores/user"
 
 	"gorm.io/gorm"
 )
 
-type AuthService struct {
-	Register *AuthRegisterService
-	Login    *AuthLoginService
-	Role     *AuthRoleService
+type AuthServiceType struct {
+	Register *AuthRegisterServiceType
+	Login    *AuthLoginServiceType
 }
 
 // NewAuthService crée une nouvelle instance de AuthService avec ses sous-services
-func NewAuthService(db *gorm.DB) *AuthService {
-	userService := user.NewUserService(db)
-	businessStore := storesBusiness.NewBusinessUserStore(db)
-	userStore := storesUser.NewUserStore(db)
-	roleStore := storesUser.NewRoleStore(db)
-	userRoleStore := storesUser.NewUserRoleStore(db)
+func AuthService(db *gorm.DB) *AuthServiceType {
+	userService := serviceUser.UserService(db)
+	ownersStore := storesOwner.OwnerStore(db)
+	roleStore := storesUser.RoleStore(db)
+	ownerRelationship := storesOwner.OwnerRelationshipStore(db)
 
-	return &AuthService{
-		Register: NewAuthRegisterService(userService, businessStore, roleStore, userRoleStore),
-		Login:    NewAuthLoginService(userService),
-		Role:     NewAuthRoleService(userStore),
+	return &AuthServiceType{
+		Register: AuthRegisterService(userService, ownersStore, roleStore, ownerRelationship),
+		Login:    AuthLoginService(userService),
 	}
 }

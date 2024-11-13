@@ -2,7 +2,7 @@ package database
 
 import (
 	"backend/config"
-	"backend/core/models"
+	"backend/database/models"
 	"fmt"
 	"log"
 	"time"
@@ -61,29 +61,28 @@ func ConnectDatabase() error {
 func Migrate() error {
 	log.Println("🔄 Démarrage de la migration des modèles...")
 
-	// Migrer les modèles définis dans l'application
 	err := DB.AutoMigrate(
-		&models.User{},
 		&models.Role{},
-		&models.UserRole{},
-		&models.BusinessUser{},
-		&models.EducationalInstitution{},
-		&models.Association{},
+		&models.Owner{},
+		&models.OwnerMembership{},
+		&models.OwnerRelationship{},
+		&models.User{},
 		&models.Event{},
-		&models.EventLike{},
-		&models.EventView{},
 		&models.EventOption{},
-		&models.Category{},
-		&models.Tag{},
+		&models.EventDescription{},
+		&models.EventTarif{},
+		&models.EventView{},
+		&models.EventCategory{},
+		&models.EventTag{},
+		&models.EventLike{},
 		&models.Ticket{},
 		&models.Payment{},
 		&models.PaymentTransaction{},
 		&models.StudiboxTransaction{},
-		&models.SchoolMembership{},
-		&models.AssociationMembership{},
-		&models.PasswordReset{},
 		&models.PointHistory{},
+		&models.PasswordReset{},
 	)
+
 	if err != nil {
 		return fmt.Errorf("❌ Échec de la migration des modèles : %v", err)
 	}
@@ -93,17 +92,17 @@ func Migrate() error {
 }
 
 // InitRoles initialise les rôles de base dans la base de données
-func InitRoles(db *gorm.DB) error {
+func InitRoles() error {
 	// Liste des rôles à initialiser
 	roles := []models.Role{
 		{Name: "Admin"},
 		{Name: "User"},
-		{Name: "Business"},
+		{Name: "Owner"},
 	}
 
 	// Initialiser chaque rôle s'il n'existe pas déjà
 	for _, role := range roles {
-		if err := db.FirstOrCreate(&role, models.Role{Name: role.Name}).Error; err != nil {
+		if err := DB.FirstOrCreate(&role, models.Role{Name: role.Name}).Error; err != nil {
 			return err
 		}
 		log.Printf("✅ Rôle '%s' vérifié ou créé avec succès.", role.Name)
@@ -114,8 +113,8 @@ func InitRoles(db *gorm.DB) error {
 }
 
 // InitCategories initialise les catégories de base dans la base de données
-func InitCategories(db *gorm.DB) error {
-	categories := []models.Category{
+func InitCategories() error {
+	categories := []models.EventCategory{
 		{Name: "Concert"},
 		{Name: "Spectacle"},
 		{Name: "Cinéma"},
@@ -128,7 +127,7 @@ func InitCategories(db *gorm.DB) error {
 	}
 
 	for _, category := range categories {
-		if err := db.FirstOrCreate(&category, models.Category{Name: category.Name}).Error; err != nil {
+		if err := DB.FirstOrCreate(&category, models.EventCategory{Name: category.Name}).Error; err != nil {
 			log.Printf("❌ Erreur lors de l'initialisation de la catégorie '%s' : %v", category.Name, err)
 			return err
 		}
@@ -140,8 +139,8 @@ func InitCategories(db *gorm.DB) error {
 }
 
 // InitTags initialise les tags liés au divertissement dans la base de données
-func InitTags(db *gorm.DB) error {
-	tags := []models.Tag{
+func InitTags() error {
+	tags := []models.EventTag{
 		{Name: "En plein air"},
 		{Name: "Familial"},
 		{Name: "Nocturne"},
@@ -158,7 +157,7 @@ func InitTags(db *gorm.DB) error {
 	}
 
 	for _, tag := range tags {
-		if err := db.FirstOrCreate(&tag, models.Tag{Name: tag.Name}).Error; err != nil {
+		if err := DB.FirstOrCreate(&tag, models.EventTag{Name: tag.Name}).Error; err != nil {
 			log.Printf("❌ Erreur lors de l'initialisation du tag '%s' : %v", tag.Name, err)
 			return err
 		}

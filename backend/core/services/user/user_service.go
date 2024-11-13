@@ -6,16 +6,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserService struct {
-	Management *UserManagementService
-	Retrieval  *UserRetrievalService
+type UserServiceType struct {
+	Management   *UserManagementServiceType
+	Retrieval    *UserRetrievalServiceType
+	UserPassword *UserPasswordServiceType
 }
 
-// NewUserService crée une nouvelle instance de UserService avec ses sous-services
-func NewUserService(db *gorm.DB) *UserService {
-	store := stores.NewUserStore(db)
-	return &UserService{
-		Management: NewUserManagementService(store),
-		Retrieval:  NewUserRetrievalService(store),
+func UserService(db *gorm.DB) *UserServiceType {
+	userStore := stores.UserStore(db)
+	userPasswordStore := stores.UserPasswordStore(db)
+
+	return &UserServiceType{
+		Management:   UserManagementService(userStore),
+		Retrieval:    UserRetrievalService(userStore),
+		UserPassword: UserPasswordService(userPasswordStore),
 	}
 }

@@ -1,0 +1,66 @@
+<mjml>
+  <mj-head>
+    <mj-title>Notification d'Événement - StudiMove</mj-title>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-class name="primary-text" color="#333333" font-size="16px" />
+      <mj-class name="footer-text" color="#888888" font-size="12px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f3f4f6">
+    <mj-section background-color="#ffffff" padding="20px" border-radius="8px">
+      <mj-column>
+        <mj-image
+          width="120px"
+          src="https://your-logo-url.com/logo.png"
+          alt="StudiMove Logo"
+        />
+        <mj-text
+          align="center"
+          font-size="22px"
+          color="#333333"
+          font-weight="bold"
+        >
+          {{event_title}}
+        </mj-text>
+        <mj-divider border-color="#dfe3e8" />
+
+        <mj-text mj-class="primary-text" line-height="1.6"> Bonjour, </mj-text>
+        <mj-text mj-class="primary-text" line-height="1.6">
+          Nous avons le plaisir de vous inviter à notre événement spécial :
+          {{event_title}}.
+        </mj-text>
+
+        <mj-text mj-class="primary-text" line-height="1.6">
+          Date : <strong>{{event_date}}</strong><br />
+          Lieu : <strong>{{event_location}}</strong>
+        </mj-text>
+
+        <mj-button
+          href="{{event_link}}"
+          background-color="#00796b"
+          color="#ffffff"
+          font-size="18px"
+          padding="15px"
+          border-radius="5px"
+        >
+          Voir les détails
+        </mj-button>
+
+        <mj-text mj-class="primary-text" font-weight="bold" padding-top="10px">
+          Cordialement,
+        </mj-text>
+        <mj-text mj-class="primary-text"> L'équipe StudiMove </mj-text>
+
+        <mj-divider border-color="#dfe3e8" />
+
+        <mj-text mj-class="footer-text" align="center">
+          Vous recevez cet email car vous avez demandé des notifications
+          d'événements.<br />
+          StudiMove, Adresse de l'entreprise<br />
+          Ville, Code Postal, Pays
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

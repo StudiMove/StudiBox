@@ -2,24 +2,24 @@ package auth
 
 import (
 	"backend/config"
-	"backend/core/models"
 	"backend/core/services/user"
 	"backend/core/utils"
+	"backend/database/models"
 	"fmt"
 )
 
-type AuthLoginService struct {
-	userService *user.UserService
+type AuthLoginServiceType struct {
+	userService *user.UserServiceType
 }
 
-func NewAuthLoginService(userService *user.UserService) *AuthLoginService {
-	return &AuthLoginService{
+func AuthLoginService(userService *user.UserServiceType) *AuthLoginServiceType {
+	return &AuthLoginServiceType{
 		userService: userService,
 	}
 }
 
 // Login gère la connexion d'un utilisateur et retourne un token JWT si valide
-func (s *AuthLoginService) Login(email, password string) (string, error) {
+func (s *AuthLoginServiceType) Login(email, password string) (string, error) {
 	user, err := s.userService.Retrieval.GetUserByEmail(email)
 	if err != nil {
 		return "", fmt.Errorf("email ou mot de passe invalide : %w", err)
@@ -38,7 +38,7 @@ func (s *AuthLoginService) Login(email, password string) (string, error) {
 }
 
 // FirebaseLogin gère la connexion via Firebase ID Token et retourne un JWT pour l'utilisateur
-func (s *AuthLoginService) FirebaseLogin(idToken string) (string, *models.User, error) {
+func (s *AuthLoginServiceType) FirebaseLogin(idToken string) (string, *models.User, error) {
 	// Vérification du ID Token de Firebase
 	token, err := config.VerifyIDToken(idToken)
 	if err != nil {

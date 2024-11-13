@@ -11,81 +11,87 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// HandleGetUser gère la récupération d'un utilisateur, que ce soit à partir du JWT ou du paramètre ID
-func HandleGetUser(c *gin.Context, userService *user.UserService) {
-	// Récupérer l'ID de l'utilisateur via JWT ou paramètre
+// HandleGetUser gère la récupération d'un profil utilisateur à partir de l'ID ou du JWT
+func HandleGetUser(c *gin.Context, userService *user.UserServiceType) {
 	userID, err := userService.Retrieval.GetUserIDFromRequest(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, responseGlobal.ErrorResponse("Invalid user ID or token", err))
+		c.JSON(http.StatusBadRequest, responseGlobal.ErrorResponse("ID utilisateur ou token invalide", err))
 		return
 	}
 
-	// Récupérer l'utilisateur par ID
 	userProfile, err := userService.Retrieval.GetUserByID(userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, responseGlobal.ErrorResponse("User not found", err))
+		c.JSON(http.StatusNotFound, responseGlobal.ErrorResponse("Utilisateur non trouvé", err))
 		return
 	}
 
-	// Extraire les rôles de l'utilisateur (si nécessaire)
-	roleNames, err := userService.Management.ExtractRoleNames(userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Failed to retrieve user roles", err))
-		return
+	resp := response.UserResponse{
+		ID:            userProfile.ID,
+		FirstName:     userProfile.FirstName,
+		LastName:      userProfile.LastName,
+		Pseudo:        userProfile.Pseudo,
+		Email:         userProfile.Email,
+		Phone:         userProfile.Phone,
+		Country:       userProfile.Country,
+		Region:        userProfile.Region,
+		PostalCode:    userProfile.PostalCode,
+		Address:       userProfile.Address,
+		BirthDate:     userProfile.BirthDate.Format("2006-01-02"),
+		ProfileImage:  userProfile.ProfileImage,
+		ProfileType:   userProfile.ProfileType,
+		StudiboxCoins: userProfile.StudiboxCoins,
+		Role:          userProfile.Role.Name,
 	}
 
-	// Créer la réponse avec le profil utilisateur
-	resp := response.UserProfileResponse{
-		ID:        userProfile.ID,
-		FirstName: userProfile.FirstName,
-		LastName:  userProfile.LastName,
-		Email:     userProfile.Email,
-		Phone:     userProfile.Phone,
-		Roles:     roleNames,
-	}
-
-	c.JSON(http.StatusOK, responseGlobal.SuccessResponse("User profile retrieved successfully", resp))
+	c.JSON(http.StatusOK, responseGlobal.SuccessResponse("Profil utilisateur récupéré avec succès", resp))
 }
 
 // HandleGetAllUsers récupère tous les utilisateurs (Admin seulement)
-func HandleGetAllUsers(c *gin.Context, userService *user.UserService) {
+func HandleGetAllUsers(c *gin.Context, userService *user.UserServiceType) {
 	users, err := userService.Retrieval.GetAllUsers()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Failed to retrieve users", err))
+		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Échec de la récupération des utilisateurs", err))
 		return
 	}
 
-	// Création de la réponse pour la liste des utilisateurs
-	var userResponses []response.UserProfileResponse
+	var userResponses []response.UserResponse
 	for _, u := range users {
-		userResponses = append(userResponses, response.UserProfileResponse{
-			FirstName: u.FirstName,
-			LastName:  u.LastName,
-			Email:     u.Email,
-			Phone:     u.Phone,
+		userResponses = append(userResponses, response.UserResponse{
+			ID:            u.ID,
+			FirstName:     u.FirstName,
+			LastName:      u.LastName,
+			Pseudo:        u.Pseudo,
+			Email:         u.Email,
+			Phone:         u.Phone,
+			Country:       u.Country,
+			Region:        u.Region,
+			PostalCode:    u.PostalCode,
+			Address:       u.Address,
+			BirthDate:     u.BirthDate.Format("2006-01-02"),
+			ProfileImage:  u.ProfileImage,
+			ProfileType:   u.ProfileType,
+			StudiboxCoins: u.StudiboxCoins,
+			Role:          u.Role.Name,
 		})
 	}
 
-	c.JSON(http.StatusOK, responseGlobal.SuccessResponse("Users retrieved successfully", userResponses))
+	c.JSON(http.StatusOK, responseGlobal.SuccessResponse("Utilisateurs récupérés avec succès", userResponses))
 }
 
-// HandleExportUsersCSV gère l'exportation des utilisateurs en CSV
-func HandleExportUsersCSV(c *gin.Context, userService *user.UserService) {
-	// Récupérer tous les utilisateurs
+// HandleExportUsersCSV gère l'exportation des utilisateurs en format CSV
+func HandleExportUsersCSV(c *gin.Context, userService *user.UserServiceType) {
 	users, err := userService.Retrieval.GetAllUsers()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Failed to retrieve users", err))
+		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Échec de la récupération des utilisateurs", err))
 		return
 	}
 
-	// Vérifier si des utilisateurs existent
 	if len(users) == 0 {
-		c.JSON(http.StatusNotFound, responseGlobal.ErrorResponse("No users found", nil))
+		c.JSON(http.StatusNotFound, responseGlobal.ErrorResponse("Aucun utilisateur trouvé", nil))
 		return
 	}
 
-	// Préparer les données pour l'exportation
-	headers := []string{"ID", "First Name", "Last Name", "Email", "Phone"}
+	headers := []string{"ID", "Prénom", "Nom", "Email", "Téléphone", "Country", "Region", "Code Postal", "City", "Address", "Pseudo", "Rôle"}
 	var rows [][]string
 	for _, user := range users {
 		rows = append(rows, []string{
@@ -93,22 +99,25 @@ func HandleExportUsersCSV(c *gin.Context, userService *user.UserService) {
 			user.FirstName,
 			user.LastName,
 			user.Email,
-			user.Phone,
+			strconv.Itoa(user.Phone),
+			user.Country,
+			user.Region,
+			strconv.Itoa(int(user.PostalCode)),
+			user.City,
+			user.Address,
+			user.Pseudo,
+			user.Role.Name,
 		})
 	}
 
-	// Utiliser l'utilitaire pour créer un fichier CSV avec point-virgule comme délimiteur
 	fileName, err := utils.ExportToCSV(headers, rows, ';')
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Failed to generate CSV", err))
+		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Échec de la génération du fichier CSV", err))
 		return
 	}
 
-	// Définir les en-têtes pour le téléchargement de fichier CSV
 	c.Header("Content-Description", "File Transfer")
 	c.Header("Content-Disposition", "attachment; filename=users.csv")
 	c.Header("Content-Type", "text/csv")
-
-	// Envoyer le fichier CSV
 	c.File(fileName)
 }

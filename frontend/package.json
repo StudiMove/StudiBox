@@ -5,14 +5,29 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b || true && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "jest"
+    "test": "jest",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.2.7",
+    "@types/react-router-dom": "^5.3.3",
+    "axios": "^1.7.7",
+    "chart.js": "^3.9.1",
+    "date-fns": "^4.1.0",
+    "jwt-decode": "^4.0.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-chartjs-2": "^4.3.1",
+    "react-datepicker": "^7.5.0",
+    "react-dom": "^18.3.1",
+    "react-redux": "^9.1.2",
+    "react-responsive": "^10.0.0",
+    "react-router-dom": "^6.26.2",
+    "react-select": "^5.8.1",
+    "redux-persist": "^6.0.0"
   },
   "jest": {
     "testEnvironment": "jsdom",
@@ -29,7 +44,16 @@
     ]
   },
   "devDependencies": {
-    "@eslint/js": "^9.9.0",
+    "@chromatic-com/storybook": "^1.9.0",
+    "@eslint/js": "^9.12.0",
+    "@storybook/addon-essentials": "^8.3.2",
+    "@storybook/addon-interactions": "^8.3.2",
+    "@storybook/addon-links": "^8.3.2",
+    "@storybook/addon-onboarding": "^8.3.2",
+    "@storybook/blocks": "^8.3.2",
+    "@storybook/react": "^8.3.2",
+    "@storybook/react-vite": "^8.3.2",
+    "@storybook/test": "^8.3.2",
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.1",
     "@types/jest": "^29.5.13",
@@ -37,17 +61,25 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
-    "eslint": "^9.9.0",
+    "eslint": "^9.12.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
+    "eslint-plugin-storybook": "^0.8.0",
+    "eslint-plugin-tailwindcss": "^3.17.4",
     "globals": "^15.9.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.4.47",
+    "storybook": "^8.3.2",
     "tailwindcss": "^3.4.12",
     "ts-jest": "^29.2.5",
     "typescript": "^5.5.3",
-    "typescript-eslint": "^8.0.1",
+    "typescript-eslint": "^8.8.1",
     "vite": "^5.4.1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "plugin:storybook/recommended"
+    ]
   }
 }

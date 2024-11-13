@@ -3,13 +3,12 @@ package user_routes
 import (
 	userHandlers "backend/core/api/handlers/user"
 	"backend/core/api/middleware"
-	"backend/core/services/auth"
 	"backend/core/services/user"
 
 	"github.com/gin-gonic/gin"
 )
 
-func UserRoutes(routerGroup *gin.RouterGroup, userService *user.UserService, authService *auth.AuthService) {
+func UserRoutes(routerGroup *gin.RouterGroup, userService *user.UserServiceType) {
 	userGroup := routerGroup.Group("/users")
 	userGroup.Use(middleware.AuthMiddleware())
 
@@ -29,7 +28,7 @@ func UserRoutes(routerGroup *gin.RouterGroup, userService *user.UserService, aut
 			userHandlers.HandleUpdateUser(c, userService)
 		})
 
-		userGroup.GET("/all", middleware.RoleMiddleware(authService, []string{"Business"}), func(c *gin.Context) {
+		userGroup.GET("/all", middleware.RoleMiddleware(userService, []string{"Owner"}), func(c *gin.Context) {
 			userHandlers.HandleGetAllUsers(c, userService)
 		})
 
@@ -37,7 +36,7 @@ func UserRoutes(routerGroup *gin.RouterGroup, userService *user.UserService, aut
 			userHandlers.HandleExportUsersCSV(c, userService)
 		})
 
-		userGroup.PUT("/:id", middleware.RoleMiddleware(authService, []string{"Business"}), func(c *gin.Context) {
+		userGroup.PUT("/:id", middleware.RoleMiddleware(userService, []string{"Owner"}), func(c *gin.Context) {
 			userHandlers.HandleUpdateUser(c, userService)
 		})
 	}

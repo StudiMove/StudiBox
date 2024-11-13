@@ -1,0 +1,268 @@
+{
+  "info": {
+    "_postman_id": "bab04f58-db34-4841-ad4a-4ffc45f73774",
+    "name": "Events",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "28085406"
+  },
+  "item": [
+    {
+      "name": "Upload Image",
+      "item": [
+        {
+          "name": "Upload Image",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzAzNjU3NjR9.ugPq9IFuXvtxmKOpE7OPsXV3ll7I9PvCdDvSwjECJuA",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [
+                    "postman-cloud:///1ef7ffc9-cf51-4bd0-85d9-3e324b345762",
+                    "postman-cloud:///1ef80015-d282-4790-9f70-16fc920b7d10",
+                    "postman-cloud:///1ef8e743-b4a7-42a0-aec9-b31ce388642f",
+                    "postman-cloud:///1ef950d2-b6f6-4990-b80e-0f621ac51037"
+                  ]
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/events/upload-image",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "events", "upload-image"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Create Event",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzAzMzY2NDF9.pt4TkXz_CgKaSmEkz0qz1jvcVgMPIYRLcVNzPoqvhPg",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"title\": \"JKDLQ\",\n    \"subtitle\": \"DQSDQ\",\n    \"start_date\": \"2024-10-03T22:00:00.000Z\",\n    \"end_date\": \"2024-10-05T22:00:00.000Z\",\n    \"start_time\": \"2024-10-28T20:00:00.476Z\",\n    \"end_time\": \"2024-10-28T18:30:00.181Z\",\n    \"is_online\": false,\n    \"is_visible\": false,\n    \"use_studibox\": false,\n    \"ticket_price\": 0,\n    \"ticket_stock\": 0,\n    \"location\": {\n        \"address\": \"\",\n        \"city\": \"\",\n        \"region\": \"\",\n        \"postalCode\": \"\",\n        \"country\": \"\"\n    },\n    \"options\": [],\n    \"tarifs\": [],\n    \"descriptions\": [\n        {\n            \"title\": \"ZEAEZ\",\n            \"description\": \"AZEA\"\n        }\n    ],\n    \"video_url\": \"\",\n    \"images\": \n        \"https://studymove-cdn.s3.amazonaws.com/event_image_1730147028_Capture d’écran 2024-10-27 à 02.20.57.png , https://studymove-cdn.s3.amazonaws.com/event_image_1730147028,https://studymove-cdn.s3.amazonaws.com/event_image_1730147028\"\n\n    ,\n    \"tags\": [\n        \"TikTok\",\n        \"Hype\",\n        \"Fun\"\n    ],\n    \"categories\": [\n        \"Musique\",\n        \"Soirée\",\n        \"Voyage\",\n        \"Bar\"\n    ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/events/create",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "events", "create"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Event",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzAyOTkzODh9.oWvko0b6d-ps6XO69KCATCC5dTSs3JtthpMoTOam1wo",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"event_id\" : 56\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/events/get",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "events", "get"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Event",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzAyOTkzODh9.oWvko0b6d-ps6XO69KCATCC5dTSs3JtthpMoTOam1wo",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/events/all",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "events", "all"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Event",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzAyOTkzODh9.oWvko0b6d-ps6XO69KCATCC5dTSs3JtthpMoTOam1wo",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"event_id\": 55,\n    \"title\": \"Concert de Musique - Mise à Jour\",\n    \"subtitle\": \"Une soirée de musique en live mise à jour\",\n    \"start_date\": \"2024-12-20T18:00:00Z\",\n    \"end_date\": \"2024-12-20T23:00:00Z\",\n    \"start_time\": \"2024-12-20T18:00:00Z\",\n    \"end_time\": \"2024-12-20T23:00:00Z\",\n    \"is_online\": true,\n    \"is_visible\": false,\n    \"use_studibox\": true,\n    \"ticket_price\": 11110.0,\n    \"ticket_stock\": 1111180,\n    \"location\": {\n        \"address\": \"456 Rue de la Musique\",\n        \"city\": \"Paris\",\n        \"postalCode\": \"75002\",\n        \"region\": \"Île-de-France\",\n        \"country\": \"France\"\n    },\n    \"options\": [\n        {\n            \"title\": \"Test 1\",\n            \"description\": \"Accès VIP mis à jour\",\n            \"price\": 10.0,\n            \"stock\": 200\n        }, {\n            \"title\": \"Test 200\",\n            \"description\": \"Accès VIP mis à jour\",\n            \"price\": 10.0,\n            \"stock\": 200\n        }, {\n            \"title\": \"Test 10\",\n            \"description\": \"Accès VIP mis à jour\",\n            \"price\": 10.0,\n            \"stock\": 200\n        }\n    ],\n    \"tarifs\": [\n        {\n            \"title\": \"Entrée Standard 1000 \",\n            \"description\": \"Accès standard mis à jour\",\n            \"price\": 10.0,\n            \"stock\": 100\n        },\n        {\n            \"title\": \"Entrée Standard 2\",\n            \"description\": \"Accès standard mis à jour\",\n            \"price\": 60.0,\n            \"stock\": 100\n        }\n    ],\n    \"descriptions\": [\n        {\n            \"title\": \"Présentation mise à jour\",\n            \"description\": \"Une soirée spéciale avec les artistes les plus célèbres.\"\n        }\n    ],\n    \"video_url\": \"https://video.link/concert_updated\",\n    \"images\": [\n        \"https://image.link/img1_updated.jpg\",\n        \"https://image.link/img2_updated.jpg\"\n    ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/events/update",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "events", "update"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Target All Event By UserID",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzAzMTgwNjd9.2jxpDk11sCSXhW5WuTceCMY4N0lyNtim129bvHMLe5c",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n\"user_id\": 3\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/events/list/target",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "events", "list", "target"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Event By Actuel User",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzAzMTgwNjd9.2jxpDk11sCSXhW5WuTceCMY4N0lyNtim129bvHMLe5c",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/events/list",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "events", "list"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

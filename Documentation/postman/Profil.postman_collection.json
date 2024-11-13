@@ -1,0 +1,277 @@
+{
+  "info": {
+    "_postman_id": "1cca32e1-5953-41d6-a5e6-281e22c6698b",
+    "name": "Profil",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "28085406"
+  },
+  "item": [
+    {
+      "name": "Profil Image",
+      "item": [
+        {
+          "name": "Update Target Profil Image",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzAzNjU1MzF9.nHYN8ieTW16uqCHNmg1ZxLxyQ1dVJYKnxlpxEYdVY5k",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman-cloud:///1ef8e743-b4a7-42a0-aec9-b31ce388642f"
+                },
+                {
+                  "key": "targetId",
+                  "value": "4",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/profil/organisation/profile/upload-image/targetId",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "profil",
+                "organisation",
+                "profile",
+                "upload-image",
+                "targetId"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Own Profil Image",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzAzNjU1MzF9.nHYN8ieTW16uqCHNmg1ZxLxyQ1dVJYKnxlpxEYdVY5k",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman-cloud:///1ef950d2-b6f6-4990-b80e-0f621ac51037"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/profil/organisation/profile/upload-image",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "profil",
+                "organisation",
+                "profile",
+                "upload-image"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Target ProfilData",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo2LCJleHAiOjE3MzAyODM1Mzl9.5BUFc8FlrEAX2-CrPo7yGgDDcyuXgmOVhwPun1NMhiI",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"targetId\": 4\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/profil/organisation/profile/targetId",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "profil", "organisation", "profile", "targetId"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ProfileData",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzA0NTYxMDR9.1CJmAqXrl3Vq5CzrVjQOx3-O2vevEetDz4-gne9uQOc",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/profil/organisation/profile",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "profil", "organisation", "profile"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get User Role",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzAzNjU3NjR9.ugPq9IFuXvtxmKOpE7OPsXV3ll7I9PvCdDvSwjECJuA",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/profil/user/role",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "profil", "user", "role"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update TargetProfilData",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzA0NTYxMDR9.1CJmAqXrl3Vq5CzrVjQOx3-O2vevEetDz4-gne9uQOc",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"targetId\": 7,\n  \"updateData\": {\n    \"name\": \"Plus tets\",\n    \"address\": \"123 Main St\",\n    \"city\": \"Paris\",\n    \"postalCode\": \"75001\",\n    \"region\": \"\",\n    \"phone\": \"+33123456789\",\n    \"country\": \"France\",\n    \"email\": \"business1@business.com\",\n    \"siret\": \"\",\n    \"description\": \"This is a test organisation.\",\n    \"status\": \"Suspended\",\n    \"type\": \"business\",\n    \"is_validated\": false,\n    \"is_pending\": true,\n    \"is_activated\": false,\n    \"profileImage\": \"\"\n}\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/profil/organisation/profile/update/targetId",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "profil",
+            "organisation",
+            "profile",
+            "update",
+            "targetId"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update OwnProfilData",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzA0NTYxMDR9.1CJmAqXrl3Vq5CzrVjQOx3-O2vevEetDz4-gne9uQOc",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Nouveau Nom Cible\",\n    \"address\": \"Nouvelle Adresse Cible\",\n    \"city\": \"Nouvelle Ville Cible\",\n    \"postalCode\": \"54321\",\n    \"region\": \"Nouvelle Région Cible\",\n    \"phone\": \"0712345678\",\n    \"country\": \"Nouveau Pays Cible\",\n    \"email\": \"admin@admin.com\",\n    \"siret\": \"987654321\",\n    \"description\": \"Nouvelle description pour le profil cible\",\n    \"status\": \"Inactif\",\n    \"type\": \"Type cible mis à jour\",\n    \"is_validated\": true,\n    \"is_pending\": false,\n    \"is_activated\": true\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/profil/organisation/profile/update",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "profil", "organisation", "profile", "update"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
