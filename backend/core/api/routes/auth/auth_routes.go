@@ -11,10 +11,16 @@ import (
 )
 
 // RegisterAuthRoutes enregistre les routes d'authentification avec authService
-func AuthRoutes(routerGroup *gin.RouterGroup, authService *auth.AuthServiceType, userService *user.UserServiceType, ownerService *owner.OwnerServiceType, emailService *email.EmailServiceType) {
+func AuthRoutes(
+	routerGroup *gin.RouterGroup,
+	authService *auth.AuthServiceType,
+	userService *user.UserServiceType,
+	ownerService *owner.OwnerServiceType,
+	emailService *email.EmailServiceType,
+) {
 	authGroup := routerGroup.Group("/auth")
 	{
-		// Passer authService aux handlers
+		// Authentification classique
 		authGroup.POST("/login", func(c *gin.Context) {
 			authHandlers.HandleLogin(c, authService, userService, ownerService)
 		})
@@ -23,6 +29,14 @@ func AuthRoutes(routerGroup *gin.RouterGroup, authService *auth.AuthServiceType,
 		})
 		authGroup.POST("/register/owner", func(c *gin.Context) {
 			authHandlers.HandleRegisterOwner(c, authService, userService, ownerService, emailService)
+		})
+
+		// Routes pour la réinitialisation de mot de passe
+		authGroup.POST("/password/reset-code", func(c *gin.Context) {
+			authHandlers.HandleGetResetCode(c, userService, emailService)
+		})
+		authGroup.POST("/password/update", func(c *gin.Context) {
+			authHandlers.HandleUpdatePasswordWithCode(c, authService, userService, emailService, ownerService)
 		})
 	}
 }

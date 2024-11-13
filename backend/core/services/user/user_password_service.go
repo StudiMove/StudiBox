@@ -12,48 +12,71 @@ import (
 )
 
 type UserPasswordServiceType struct {
-	store *stores.UserPasswordStoreType
+	passwordStore *stores.UserPasswordStoreType
+	userStore     *stores.UserStoreType
 }
 
-func UserPasswordService(store *stores.UserPasswordStoreType) *UserPasswordServiceType {
-	return &UserPasswordServiceType{store: store}
+func UserPasswordService(passwordStore *stores.UserPasswordStoreType, userStore *stores.UserStoreType) *UserPasswordServiceType {
+	return &UserPasswordServiceType{
+		passwordStore: passwordStore,
+		userStore:     userStore,
+	}
 }
 
-// SendResetCode génère et stocke un code de réinitialisation pour un utilisateur
-func (s *UserPasswordServiceType) SendResetCode(userID uint) (int, error) {
+// Générer un code de réinitialisation et le stocker
+func (s *UserPasswordServiceType) GenerateResetCode(email string) (int, error) {
+	user, err := s.userStore.GetByEmail(email)
+	if user == nil || err != nil {
+		return 0, errors.New("utilisateur introuvable")
+	}
+
 	resetCode := generateSixDigitCode()
-	userPassword, err := s.store.GetByUserID(userID)
+	userPassword, err := s.passwordStore.GetByUserID(user.ID)
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return 0, err
 	}
 
+	// Mettre à jour ou créer un enregistrement PasswordReset
 	if userPassword != nil {
 		userPassword.ResetCode = resetCode
 		userPassword.Expiration = time.Now().Add(5 * time.Minute)
-		err = s.store.Update(userPassword)
+		err = s.passwordStore.Update(userPassword)
 	} else {
 		userPassword = &models.PasswordReset{
-			UserID:     userID,
+			UserID:     user.ID,
 			ResetCode:  resetCode,
 			Expiration: time.Now().Add(5 * time.Minute),
 		}
-		err = s.store.Create(userPassword)
+		err = s.passwordStore.Create(userPassword)
 	}
-
 	if err != nil {
 		return 0, err
 	}
+
 	return resetCode, nil
 }
 
-// UpdatePassword met à jour le mot de passe d'un utilisateur par ID
-func (s *UserPasswordServiceType) UpdatePassword(userID uint, newPassword string) error {
+// Mettre à jour le mot de passe avec le code de réinitialisation
+func (s *UserPasswordServiceType) UpdatePasswordWithCode(email string, code int, newPassword string) error {
+	user, err := s.userStore.GetByEmail(email)
+	if user == nil || err != nil {
+		return errors.New("utilisateur introuvable")
+	}
+
+	userPassword, err := s.passwordStore.GetByUserID(user.ID)
+	if err != nil || userPassword.ResetCode != code || userPassword.Expiration.Before(time.Now()) {
+		return errors.New("code de réinitialisation invalide ou expiré")
+	}
+
+	// Hash du nouveau mot de passe
 	hashedPassword, err := utils.HashPassword(newPassword)
 	if err != nil {
 		return err
 	}
-	return s.store.UpdateUserPassword(userID, hashedPassword)
+
+	// Mettre à jour le mot de passe
+	return s.passwordStore.UpdateUserPassword(user.ID, hashedPassword)
 }
 
 func generateSixDigitCode() int {

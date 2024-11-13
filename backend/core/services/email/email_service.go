@@ -10,9 +10,9 @@ import (
 type EmailEventType string
 
 const (
-	EventRegistration  EmailEventType = "registration"
-	EventPasswordReset EmailEventType = "password_reset"
-	EventCreateEvent   EmailEventType = "create_event"
+	Registration  EmailEventType = "registration"
+	PasswordReset EmailEventType = "password_reset"
+	CreateEvent   EmailEventType = "create_event"
 )
 
 // EmailServiceType contient la configuration pour le service email
@@ -28,23 +28,23 @@ func (e *EmailServiceType) SendEmailWithTemplate(eventType EmailEventType, to []
 	// Définir le sujet et le template en fonction de l’événement
 	var subject, templateFile string
 	switch eventType {
-	case EventRegistration:
+	case Registration:
 		subject = "Bienvenue sur StudiMove !"
 		templateFile = "registration.mjml"
-	case EventPasswordReset:
+	case PasswordReset:
 		subject = "Réinitialisation de votre mot de passe"
 		templateFile = "password_reset.mjml"
-	case EventCreateEvent:
+	case CreateEvent:
 		subject = data["subject"]
 		templateFile = "create_event.mjml"
 	default:
 		return fmt.Errorf("unhandled email event type: %s", eventType)
 	}
 
-	// Convertir le template MJML en HTML
-	htmlContent, err := utils.ConvertMJMLToHTML(filepath.Join("templates", templateFile))
+	// Convertir le template MJML en HTML avec les données
+	htmlContent, err := utils.ConvertMJMLToHTML(filepath.Join("templates", templateFile), data)
 	if err != nil {
-		return fmt.Errorf("failed to convert template to HTML: %w", err)
+		return fmt.Errorf("échec de la conversion du template en HTML : %w", err)
 	}
 
 	// Envoyer l’email avec le contenu généré

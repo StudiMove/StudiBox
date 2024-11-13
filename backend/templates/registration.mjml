@@ -3,63 +3,149 @@
     <mj-title>Bienvenue sur StudiMove !</mj-title>
     <mj-attributes>
       <mj-all font-family="Arial, sans-serif" />
-      <mj-class name="primary-text" color="#333333" font-size="16px" />
-      <mj-class name="footer-text" color="#888888" font-size="12px" />
+      <mj-class
+        name="primary-text"
+        color="#333333"
+        font-size="16px"
+        line-height="1.6"
+      />
+      <mj-class
+        name="footer-text"
+        color="#888888"
+        font-size="12px"
+        line-height="1.6"
+      />
     </mj-attributes>
+    <mj-style>
+      .button { background-color: #49D4C6; color: #FFFFFF; text-decoration:
+      none; padding: 12px 30px; border-radius: 8px; font-weight: bold; display:
+      inline-block; text-align: center; box-shadow: 0 4px 8px rgba(0, 0, 0,
+      0.1); } .highlight { color: #0F52BA; font-weight: bold; } .footer-link {
+      color: #888888; text-decoration: none; } .body-section { border-radius:
+      10px; box-shadow: 0 4px 5px rgba(0, 0, 0, 0.1); }
+    </mj-style>
   </mj-head>
-  <mj-body background-color="#f3f4f6">
-    <mj-section background-color="#ffffff" padding="20px" border-radius="8px">
-      <mj-column>
-        <mj-image
-          width="120px"
-          src="https://your-logo-url.com/logo.png"
-          alt="StudiMove Logo"
-        />
-        <mj-text
-          align="center"
-          font-size="22px"
-          color="#333333"
-          font-weight="bold"
-        >
-          Bienvenue chez StudiMove !
-        </mj-text>
-        <mj-divider border-color="#dfe3e8" />
 
-        <mj-text mj-class="primary-text" line-height="1.6"> Bonjour, </mj-text>
-        <mj-text mj-class="primary-text" line-height="1.6">
-          Merci de rejoindre la communauté StudiMove ! Nous sommes ravis de vous
-          compter parmi nous. Découvrez des événements exclusifs, des rencontres
-          et de nouvelles expériences.
-        </mj-text>
+  <mj-body background-color="#f3f4f6" width="600px">
+    <!-- En-tête avec logo -->
+    <mj-wrapper full-width="full-width" padding="20px 0">
+      <mj-section
+        background-color="#FFFFFF"
+        padding="20px"
+        border-radius="12px 12px 0 0"
+        css-class="body-section"
+      >
+        <mj-column>
+          <mj-image
+            src="https://your-logo-url.com/logo.png"
+            width="120px"
+            alt="StudiMove Logo"
+            align="center"
+          />
+          <mj-text
+            align="center"
+            color="#0F52BA"
+            font-size="22px"
+            font-weight="bold"
+            padding-top="10px"
+          >
+            Bienvenue chez StudiMove !
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
 
-        <mj-button
-          href="https://studiMove.com"
-          background-color="#00796b"
-          color="#ffffff"
-          font-size="18px"
-          padding="15px"
-          border-radius="5px"
-        >
-          Commencez à explorer
-        </mj-button>
+    <!-- Section principale encadrée avec ombre et coins arrondis -->
+    <mj-wrapper
+      padding="20px"
+      background-color="#FFFFFF"
+      css-class="body-section"
+    >
+      <mj-section padding-left="20px" padding-right="20px">
+        <mj-column>
+          <!-- Message de bienvenue -->
+          <mj-text mj-class="primary-text" padding-top="20px">
+            Bonjour,
+          </mj-text>
+          <mj-text mj-class="primary-text" padding-top="10px">
+            Merci de rejoindre la communauté
+            <span class="highlight">StudiMove</span> ! Nous sommes ravis de vous
+            compter parmi nous. Découvrez des événements exclusifs, des
+            rencontres et de nouvelles expériences.
+          </mj-text>
 
-        <mj-text mj-class="primary-text" line-height="1.6">
-          Nous restons disponibles pour toute question ou assistance.
-        </mj-text>
+          <!-- Bouton pour commencer à explorer -->
+          <mj-text align="center" padding-top="30px">
+            <a href="https://studiMove.com" class="button"
+              >Commencez à explorer</a
+            >
+          </mj-text>
 
-        <mj-text mj-class="primary-text" font-weight="bold" padding-top="10px">
-          Cordialement,
-        </mj-text>
-        <mj-text mj-class="primary-text"> L'équipe StudiMove </mj-text>
+          <!-- Message de support -->
+          <mj-text mj-class="primary-text" padding-top="20px">
+            Nous restons disponibles pour toute question ou assistance.
+          </mj-text>
 
-        <mj-divider border-color="#dfe3e8" />
+          <!-- Signature -->
+          <mj-divider border-color="#B8C0CC" padding="30px 0" />
+          <mj-text mj-class="primary-text" font-weight="bold">
+            Cordialement,
+          </mj-text>
+          <mj-text mj-class="primary-text">L'équipe StudiMove</mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
 
-        <mj-text mj-class="footer-text" align="center">
-          Vous recevez cet email car vous vous êtes inscrit sur StudiMove.<br />
-          StudiMove, Adresse de l'entreprise<br />
-          Ville, Code Postal, Pays
-        </mj-text>
-      </mj-column>
-    </mj-section>
+    <!-- Footer avec réseaux sociaux -->
+    <mj-wrapper full-width="full-width" padding="20px 0">
+      <mj-section
+        background-color="#FFFFFF"
+        border-radius="0 0 12px 12px"
+        css-class="body-section"
+      >
+        <mj-column>
+          <mj-text align="center" mj-class="footer-text" padding-top="10px">
+            Vous recevez cet email car vous vous êtes inscrit sur StudiMove.<br />
+            StudiMove, Adresse de l'entreprise<br />
+            Ville, Code Postal, Pays
+          </mj-text>
+
+          <!-- Liens sociaux -->
+          <mj-social
+            icon-size="24px"
+            mode="horizontal"
+            align="center"
+            padding-top="20px"
+          >
+            <mj-social-element
+              name="facebook"
+              href="https://facebook.com/studimove"
+              background-color="#0F52BA"
+            ></mj-social-element>
+            <mj-social-element
+              name="twitter"
+              href="https://twitter.com/studimove"
+              background-color="#0F52BA"
+            ></mj-social-element>
+            <mj-social-element
+              name="linkedin"
+              href="https://linkedin.com/studimove"
+              background-color="#0F52BA"
+            ></mj-social-element>
+          </mj-social>
+
+          <!-- Liens de désabonnement et confidentialité -->
+          <mj-text align="center" mj-class="footer-text" padding-top="20px">
+            <a href="https://privacy.studimove.com" class="footer-link"
+              >Politique de confidentialité</a
+            >
+            |
+            <a href="https://unsubscribe.studimove.com" class="footer-link"
+              >Se désabonner</a
+            >
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
   </mj-body>
 </mjml>

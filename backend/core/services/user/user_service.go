@@ -19,6 +19,6 @@ func UserService(db *gorm.DB) *UserServiceType {
 	return &UserServiceType{
 		Management:   UserManagementService(userStore),
 		Retrieval:    UserRetrievalService(userStore),
-		UserPassword: UserPasswordService(userPasswordStore),
+		UserPassword: UserPasswordService(userPasswordStore, userStore),
 	}
 }

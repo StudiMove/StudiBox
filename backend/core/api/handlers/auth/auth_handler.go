@@ -13,7 +13,13 @@ import (
 )
 
 // buildAuthResponse construit la réponse d'authentification pour un utilisateur
-func buildAuthResponse(c *gin.Context, userService *user.UserServiceType, ownerService *owner.OwnerServiceType, email string, token string) error {
+func buildAuthResponse(
+	c *gin.Context,
+	userService *user.UserServiceType,
+	ownerService *owner.OwnerServiceType,
+	email string,
+	token string,
+) error {
 	user, err := userService.Retrieval.GetUserByEmail(email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Erreur lors de la récupération de l'utilisateur", err))
@@ -37,17 +43,17 @@ func buildAuthResponse(c *gin.Context, userService *user.UserServiceType, ownerS
 		IsAuthenticated: true,
 		User: response.UserAuthResponse{
 			ID:          user.ID,
-			Email:       user.Email,
 			FirstName:   user.FirstName,
 			LastName:    user.LastName,
 			Pseudo:      user.Pseudo,
+			Email:       user.Email,
 			ProfileType: user.ProfileType,
 			Type:        ownerType,
 			Role:        roleName,
 		},
 	}
 
-	c.JSON(http.StatusOK, responseGlobal.SuccessResponse("Opération d'authentification réussie", resp))
+	c.JSON(http.StatusOK, responseGlobal.SuccessResponse("Connexion réussie", resp))
 	return nil
 }
 

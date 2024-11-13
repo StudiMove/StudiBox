@@ -2,6 +2,7 @@ package user
 
 import (
 	"backend/database/models"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -38,9 +39,19 @@ func (s *UserPasswordStoreType) GetByID(id uint) (*models.PasswordReset, error) 
 
 // Récupérer un password reset par UserID
 func (s *UserPasswordStoreType) GetByUserID(userID uint) (*models.PasswordReset, error) {
+	if userID == 0 {
+		return nil, errors.New("userID invalide")
+	}
+
 	var userPassword models.PasswordReset
 	err := s.db.Where("user_id = ?", userID).First(&userPassword).Error
-	return &userPassword, err
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // Renvoie nil si aucun enregistrement n'est trouvé
+		}
+		return nil, err
+	}
+	return &userPassword, nil
 }
 
 // Mettre à jour le mot de passe d'un utilisateur par son ID

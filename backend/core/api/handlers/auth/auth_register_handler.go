@@ -44,7 +44,7 @@ func HandleRegisterUser(
 		"subject": "Bienvenue sur StudiMove !",
 		"name":    registerReq.FirstName,
 	}
-	err := emailService.SendEmailWithTemplate(email.EventRegistration, []string{registerReq.Email}, emailData)
+	err := emailService.SendEmailWithTemplate(email.Registration, []string{registerReq.Email}, emailData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Échec de l'envoi de l'email", err))
 		return
@@ -92,7 +92,7 @@ func HandleRegisterOwner(
 		"subject": "Bienvenue sur StudiMove !",
 		"name":    registerReq.FirstName,
 	}
-	err := emailService.SendEmailWithTemplate(email.EventRegistration, []string{registerReq.Email}, emailData)
+	err := emailService.SendEmailWithTemplate(email.Registration, []string{registerReq.Email}, emailData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, responseGlobal.ErrorResponse("Échec de l'envoi de l'email", err))
 		return

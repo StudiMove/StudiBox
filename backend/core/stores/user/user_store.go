@@ -50,12 +50,19 @@ func (s *UserStoreType) GetByID(id uint) (*models.User, error) {
 
 // Récupérer un utilisateur par son adresse e-mail avec préchargement du rôle
 func (s *UserStoreType) GetByEmail(email string) (*models.User, error) {
-	var user models.User
-	err := s.db.Preload("Role").Where("email = ?", email).First(&user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
+	if email == "" {
+		return nil, errors.New("email non fourni")
 	}
-	return &user, err
+
+	var user models.User
+	err := s.db.Where("email = ?", email).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &user, nil
 }
 
 // Récupérer un utilisateur par son pseudo avec préchargement du rôle

@@ -1,5 +1,17 @@
 package request
 
+// ResetPasswordRequest représente la requête pour réinitialiser le mot de passe
+type ResetPasswordRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	Code        int    `json:"code" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
+// GetResetCodeRequest représente la requête pour demander un code de réinitialisation
+type GetResetCodeRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
 // LoginRequest définit les données envoyées pour la connexion
 type LoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
