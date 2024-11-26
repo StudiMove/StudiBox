@@ -1,0 +1,46 @@
+name: Deploy with Docker
+
+on:
+  push:
+    branches:
+      - main  # Déclenche l'action sur les push vers la branche "main"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Clean server directory
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: 146.59.226.173
+        username: debian
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        script: |
+          rm -rf ~/projects/StudyBox/*
+
+    - name: Copy files to server
+      uses: appleboy/scp-action@v0.1.5
+      with:
+        host: 146.59.226.173
+        username: debian
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        source: "."
+        target: "~/projects/StudyBox"
+
+    - name: Deploy with Docker
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: 146.59.226.173
+        username: debian
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        script: |
+          cd ~/projects/StudyBox
+          docker-compose down
+          docker-compose up -d
