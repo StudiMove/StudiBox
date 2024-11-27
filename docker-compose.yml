@@ -2,9 +2,9 @@ services:
   db:
     image: postgres:latest
     environment:
-      POSTGRES_USER: romain
-      POSTGRES_PASSWORD: votre_mot_de_passe
-      POSTGRES_DB: databasestudymove
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - '5432:5432'
     networks:
@@ -14,37 +14,79 @@ services:
     build:
       context: ./backend
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: romain
-      DB_PASSWORD: votre_mot_de_passe
-      DB_NAME: databasestudymove
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD} 
+      DB_NAME: ${DB_NAME}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      S3_BUCKET: ${S3_BUCKET}
+      SMTP_SERVER: mailhog
+      SMTP_PORT: 1025
+
     ports:
       - '8080:8080'
     depends_on:
       - db
+      - mailhog
+
     networks:
       - studymovenetwork
 
   pgadmin:
     image: dpage/pgadmin4
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
       - '5050:80'
     networks:
       - studymovenetwork
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #   ports:
-  #     - '3000:80'
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - studymovenetwork
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - '3000:80'
+    deploy:
+      resources:
+        limits:
+          memory: 2GiB
+          cpus: "1.0"
+    depends_on:
+      - backend
+    networks:
+      - studymovenetwork
+
+
+
+  smtp:
+    build:
+      context: ./SMTP
+    ports:
+      - '25:25'
+    environment:
+      - mailname=studibox.fr
+      - smtp_user=user:password
+    networks:
+      - studymovenetwork
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - '8025:8025'
+      - '1025:1025'
+    networks:
+      - studymovenetwork
+  swagger:
+    build:
+      context: ./ApiDocumentation
+    ports:
+      - '8081:80'
+    networks:
+      - studymovenetwork
 
 networks:
   studymovenetwork:

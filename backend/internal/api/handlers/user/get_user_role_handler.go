@@ -2,19 +2,21 @@
 package user
 
 import (
-    "encoding/json"
-    "log"
-    "net/http"
-    "strings"
-    "fmt"
-    "backend/config"
-    "backend/internal/services/userservice" // Mise à jour du nom du package
-    "backend/internal/utils"
+	"backend/config"
+	"backend/internal/services/userservice" // Mise à jour du nom du package
+	"backend/internal/utils"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
 )
 
 // GetUserRoleHandler gère la récupération du rôle d'un utilisateur.
 func GetUserRoleHandler(userService *userservice.UserService) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
+        log.Println("GetUserRoleHandler reached")
+
         // Récupérer le token à partir des en-têtes
         tokenStr := r.Header.Get("Authorization")
         if tokenStr == "" {

@@ -3,7 +3,7 @@ package models
 import "gorm.io/gorm"
 
 type UserRole struct {
-    gorm.Model // Inclut les champs ID, CreatedAt, UpdatedAt, DeletedAt
-    UserID uint // Référence à l'utilisateur
-    RoleID uint // Référence au rôle
+    gorm.Model
+    UserID uint `gorm:"uniqueIndex:user_role_unique" json:"userId"` // Référence à l'utilisateur
+    RoleID uint `gorm:"uniqueIndex:user_role_unique" json:"roleId"` // Référence au rôle
 }

@@ -1,83 +1,157 @@
+// package main
+
+// import (
+// 	"fmt"
+// 	"log"
+// 	"net/http"
+
+// 	"backend/config"
+// 	"backend/internal/api/routes"
+// 	"backend/internal/db"
+// 	"backend/internal/services/auth"
+// 	"backend/internal/services/event"
+// 	"backend/internal/services/password"
+// 	"backend/internal/services/profilservice" // Import du service profil
+// 	"backend/internal/services/storage"
+// 	"backend/pkg/httpclient"
+// )
+
+// func main() {
+// 	// Charger la configuration de l'application
+// 	fmt.Println("Chargement de la configuration de l'application...")
+// 	config.LoadConfig()
+
+// 	// Connecter à la base de données et appliquer les migrations
+// 	fmt.Println("Connexion à la base de données...")
+// 	dbConnection := db.ConnectDatabase()
+// 	fmt.Println("Application des migrations...")
+// 	db.Migrate()
+// 	fmt.Println("Initialisation des rôles dans la base de données...")
+// 	db.InitRoles(dbConnection)
+
+// 	// Initialiser les services nécessaires
+// 	fmt.Println("Initialisation des services...")
+// 	s3Service := storage.NewS3Storage(config.AppConfig.S3Bucket)
+// 	apiClient := httpclient.NewAPIClient(config.AppConfig.APIBaseURL)
+// 	authService := auth.NewAuthService(dbConnection)
+// 	eventService := event.NewEventService(dbConnection, s3Service)
+// 	passwordService := password.NewPasswordResetService(dbConnection)
+// 	profilService := profilservice.NewProfilService(dbConnection) // Initialisation de profilService
+
+// 	// Configurer le routeur avec les routes et middlewares
+// 	fmt.Println("Configuration des routes...")
+// 	router := routes.InitRouter(authService, eventService, apiClient, passwordService, profilService, dbConnection)
+
+//		// Démarrer le serveur
+//		serverAddress := fmt.Sprintf(":%s", config.AppConfig.ServerPort)
+//		fmt.Printf("Démarrage du serveur sur le port %s\n", config.AppConfig.ServerPort)
+//		log.Fatal(http.ListenAndServe(serverAddress, router))
+//	}
+//
+// main.go
+
+// package main
+
+// import (
+// 	"fmt"
+// 	"log"
+// 	"net/http"
+
+// 	"backend/config"
+// 	"backend/internal/api/routes"
+// 	"backend/internal/db"
+// 	"backend/internal/services/auth"
+// 	"backend/internal/services/event"
+// 	"backend/internal/services/password"
+// 	"backend/internal/services/profilservice"
+// 	"backend/internal/services/storage"
+// 	"backend/internal/services/userservice"
+// 	"backend/pkg/httpclient"
+// )
+
+// func main() {
+// 	// Charger la configuration de l'application
+// 	fmt.Println("Chargement de la configuration de l'application...")
+// 	config.LoadConfig()
+
+// 	// Connecter à la base de données et appliquer les migrations
+// 	fmt.Println("Connexion à la base de données...")
+// 	dbConnection := db.ConnectDatabase()
+// 	fmt.Println("Application des migrations...")
+// 	db.Migrate()
+// 	fmt.Println("Initialisation des rôles dans la base de données...")
+// 	db.InitRoles(dbConnection)
+
+// 	// Initialiser les services nécessaires
+// 	fmt.Println("Initialisation des services...")
+// 	s3Service := storage.NewS3Storage(config.AppConfig.S3Bucket)
+// 	apiClient := httpclient.NewAPIClient(config.AppConfig.APIBaseURL)
+// 	authService := auth.NewAuthService(dbConnection)
+// 	eventService := event.NewEventService(dbConnection, s3Service)
+// 	passwordService := password.NewPasswordResetService(dbConnection)
+// 	profilService := profilservice.NewProfilService(dbConnection)
+// 	userService := userservice.NewUserService(dbConnection)
+
+// 	// Configurer le routeur avec les routes et middlewares
+// 	fmt.Println("Configuration des routes...")
+// 	router := routes.InitRouter(authService, eventService, apiClient, passwordService, profilService, userService, s3Service, dbConnection)
+
+//		// Démarrer le serveur
+//		serverAddress := fmt.Sprintf(":%s", config.AppConfig.ServerPort)
+//		fmt.Printf("Démarrage du serveur sur le port %s\n", config.AppConfig.ServerPort)
+//		log.Fatal(http.ListenAndServe(serverAddress, router))
+//	}
+
 package main
 
 import (
-    "fmt"
-    "log"
-    "net/http"
+	"fmt"
+	"log"
+	"net/http"
 
-    "backend/config"
-    "backend/internal/api/routes"
-    "backend/internal/api/middlewares"
-    "backend/internal/api/handlers/authentification"
-    "backend/internal/api/handlers/events"
-    "backend/internal/api/handlers/user/business/profil"
-    "backend/internal/db"
-    "backend/internal/services/auth"
-    "backend/internal/services/event"
-    "backend/internal/services/storage"
-    "backend/pkg/httpclient"
-    "backend/internal/services/userservice"
-    "backend/internal/services/userservice/business/profilservice" // Importer le profilservice
+	"backend/config"
+	"backend/internal/api/routes"
+	"backend/internal/db"
+	"backend/internal/services/auth"
+	"backend/internal/services/event"
+	"backend/internal/services/password"
+	"backend/internal/services/profilservice"
+	"backend/internal/services/storage"
+	"backend/internal/services/userservice"
+	"backend/pkg/httpclient"
 )
 
 func main() {
-    // Charger la configuration
-    config.LoadConfig()
+	// Charger la configuration de l'application
+	fmt.Println("Chargement de la configuration de l'application...")
+	config.LoadConfig()
 
-    // Connexion à la base de données
-    db.ConnectDatabase()
+	// Connecter à la base de données et appliquer les migrations
+	fmt.Println("Connexion à la base de données...")
+	dbConnection := db.ConnectDatabase()
+	fmt.Println("Application des migrations...")
+	db.Migrate()
+	fmt.Println("Initialisation des rôles dans la base de données...")
+	db.InitRoles(dbConnection)
 
-    // Migrer automatiquement tous les modèles
-    db.Migrate()
+	// Initialiser les services nécessaires
+	fmt.Println("Initialisation des services...")
+	s3Service := storage.NewS3Storage(config.AppConfig.S3Bucket)
+	apiClient := httpclient.NewAPIClient(config.AppConfig.APIBaseURL)
+	authService := auth.NewAuthService(dbConnection)
+	eventService := event.NewEventService(dbConnection, s3Service)
+	passwordService := password.NewPasswordResetService(dbConnection)
+	profilService := profilservice.NewProfilService(dbConnection, s3Service)
 
-    // Initialiser les rôles
-    db.InitRoles(db.DB)
+	userService := userservice.NewUserService(dbConnection)
+	jwtSecret := config.AppConfig.JwtSecretAccessKey
 
-    // Créer une instance du service de stockage
-    s3Service := storage.NewS3Storage(config.AppConfig.S3Bucket)
+	// Configurer le routeur avec les routes et middlewares
+	fmt.Println("Configuration des routes...")
+	router := routes.InitRouter(authService, eventService, apiClient, passwordService, profilService, userService, s3Service, dbConnection, jwtSecret)
 
-    // Créer le client HTTP
-    apiClient := httpclient.NewAPIClient(config.AppConfig.APIBaseURL)
-
-    // Créer les services
-    authService := auth.NewAuthService(db.DB)        
-    eventService := event.NewEventService(db.DB)
-    userService := userservice.NewUserService(db.DB) 
-    profilService := profilservice.NewProfilService(db.DB) // Initialiser le service Profil
-
-    // Créer les handlers
-    authHandler := authentification.NewAuthHandler(authService)
-    registerHandler := authentification.NewRegisterHandler(authService, apiClient)
-    createEventHandler := events.NewCreateEventHandler(eventService, apiClient)
-    getEventHandler := events.NewGetEventHandler(eventService)
-    updateEventHandler := events.NewUpdateEventHandler(eventService)
-    deleteEventHandler := events.NewDeleteEventHandler(eventService)
-
-    // Créer les handlers pour le profil business avec profilService
-    getProfilHandler := profil.NewGetProfilHandler(profilService)
-    updateProfilHandler := profil.NewUpdateProfilHandler(profilService)
-
-    // Enregistrer les routes
-    mux := http.NewServeMux()
-    routes.RegisterRoutes(
-        mux,
-        s3Service,
-        authHandler,
-        registerHandler,
-        createEventHandler,
-        getEventHandler,
-        updateEventHandler,
-        deleteEventHandler,
-        userService,
-        authService,
-        getProfilHandler, // Ajout du handler de récupération du profil
-        updateProfilHandler, // Ajout du handler de mise à jour du profil
-    )
-
-    // Démarrer le serveur
-    serverAddress := fmt.Sprintf(":%s", config.AppConfig.ServerPort)
-    fmt.Printf("Démarrage du serveur sur le port %s\n", config.AppConfig.ServerPort)
-
-    // Utiliser le middleware CORS
-    log.Fatal(http.ListenAndServe(serverAddress, middleware.CORSMiddleware(mux)))
+	// Démarrer le serveur
+	serverAddress := fmt.Sprintf(":%s", config.AppConfig.ServerPort)
+	fmt.Printf("Démarrage du serveur sur le port %s\n", config.AppConfig.ServerPort)
+	log.Fatal(http.ListenAndServe(serverAddress, router))
 }

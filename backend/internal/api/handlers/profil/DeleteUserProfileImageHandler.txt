@@ -1,0 +1,31 @@
+package user
+
+import (
+    "net/http"
+    "backend/internal/services/storage"
+    "log"
+)
+
+type DeleteUserProfileImageHandler struct {
+    storageService storage.StorageService
+}
+
+func NewDeleteUserProfileImageHandler(storageService storage.StorageService) *DeleteUserProfileImageHandler {
+    return &DeleteUserProfileImageHandler{storageService: storageService}
+}
+
+func (h *DeleteUserProfileImageHandler) HandleDeleteProfileImage(w http.ResponseWriter, r *http.Request) {
+    userID := r.URL.Query().Get("user_id")
+
+    // Supprimer l'image de profil basée sur userID
+    profileImageName := "profile_image_" + userID + ".jpg" // Formater le nom de fichier comme il est stocké
+    err := h.storageService.DeleteFile(profileImageName)
+    if err != nil {
+        log.Printf("Failed to delete profile image: %v", err)
+        http.Error(w, "Failed to delete profile image", http.StatusInternalServerError)
+        return
+    }
+
+    log.Printf("Profile image deleted: %s", profileImageName)
+    w.Write([]byte("Profile image deleted successfully"))
+}

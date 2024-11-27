@@ -1,0 +1,2502 @@
+openapi: 3.0.0
+info:
+  title: StudyMove API
+  description: Documentation de l'API StudyMove
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Serveur local de développement
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  #AUTH
+
+  #POST
+  /api/v1/auth/register/organisation:
+    post:
+      summary: Enregistre une nouvelle organisation
+      description: Cette route permet de créer un nouvel utilisateur pour une organisation et de lui assigner un rôle.
+      tags:
+        - Authentification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: "Adresse email de l'organisation"
+                  example: 'test@organisation.com'
+                password:
+                  type: string
+                  description: "Mot de passe de l'organisation"
+                  example: 'yourpassword123'
+                organisationName:
+                  type: string
+                  description: "Nom de l'organisation"
+                  example: 'Organisation Test'
+                address:
+                  type: string
+                  description: "Adresse de l'organisation"
+                  example: '123 Main St'
+                postalCode:
+                  type: string
+                  description: "Code postal de l'organisation"
+                  example: '75001'
+                city:
+                  type: string
+                  description: "Ville de l'organisation"
+                  example: 'Paris'
+                country:
+                  type: string
+                  description: "Pays de l'organisation"
+                  example: 'France'
+                phone:
+                  type: string
+                  description: "Numéro de téléphone de l'organisation"
+                  example: '+33123456789'
+                description:
+                  type: string
+                  description: "Description de l'organisation"
+                  example: 'This is a test organisation.'
+                organisationType:
+                  type: string
+                  description: "Type d'organisation (business, school, association)"
+                  enum: [business, school, association]
+                  example: 'school'
+      responses:
+        '201':
+          description: Organisation créée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: integer
+                    description: "ID de l'utilisateur créé"
+                    example: 3
+                  message:
+                    type: string
+                    description: 'Message de succès'
+                    example: 'school user successfully registered'
+                  success:
+                    type: boolean
+                    description: 'Indicateur de réussite'
+                    example: true
+        '400':
+          description: Requête invalide (champs requis manquants ou incorrects)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Invalid request payload'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Failed to register organisation'
+
+  /api/v1/auth/login:
+    post:
+      summary: Authentifie un utilisateur
+      description: Cette route permet de connecter un utilisateur en vérifiant son email et son mot de passe. Renvoie un token JWT en cas de succès.
+      tags:
+        - Authentification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: "Adresse email de l'utilisateur"
+                  example: 'test@organisation.com'
+                password:
+                  type: string
+                  description: "Mot de passe de l'utilisateur"
+                  example: 'yourpassword123'
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: "Token JWT de l'utilisateur"
+                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjozLCJleHAiOjE3MzAyMTgwNDN9.1o2E4EP1r3uGjZxOQj2kOe9Vj-whc-TxgwquG6yW-BA'
+                  profile_image:
+                    type: string
+                    description: "URL de l'image de profil de l'utilisateur"
+                    example: 'url'
+                  isAuthenticated:
+                    type: boolean
+                    description: "Indicateur de réussite d'authentification"
+                    example: true
+        '401':
+          description: Utilisateur non autorisé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Raison de l'échec de l'authentification"
+                    example: 'Votre compte est en attente de validation de notre part'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur serveur lors de la tentative de connexion de l'utilisateur"
+
+  #PROFIL
+  #POST
+
+  /api/v1/profil/organisation/profile/targetId:
+    post:
+      summary: "Récupérer le profil d'un utilisateur par TargetID"
+      description: "Cette route permet de récupérer le profil complet d'un utilisateur en utilisant son TargetID."
+      tags:
+        - 'Profil'
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+          required: true
+          description: Token JWT de l'utilisateur (nécessite le préfixe `Bearer `).
+      security:
+        - BearerAuth: [] # Spécifie que l'authentification par token est requise
+      requestBody:
+        description: "ID de l'utilisateur cible pour récupérer les informations de profil."
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetId:
+                  type: integer
+                  description: "L'ID cible de l'utilisateur à récupérer."
+                  example: 8
+      responses:
+        '200':
+          description: "Profil de l'utilisateur récupéré avec succès."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: integer
+                    description: "ID de l'utilisateur."
+                    example: 8
+                  email:
+                    type: string
+                    description: "Adresse e-mail de l'utilisateur."
+                    example: 'business@business.com'
+                  phone:
+                    type: string
+                    description: "Numéro de téléphone de l'utilisateur."
+                    example: '0781566570'
+                  profile_image:
+                    type: string
+                    description: "URL de l'image de profil de l'utilisateur."
+                    example: ''
+                  roles:
+                    type: array
+                    items:
+                      type: string
+                    description: "Liste des rôles de l'utilisateur."
+                    example: ['business']
+                  organisation:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: "Nom de l'organisation."
+                        example: 'BUSINES'
+                      siret:
+                        type: string
+                        description: "Numéro SIRET de l'organisation."
+                        example: ''
+                      address:
+                        type: string
+                        description: "Adresse de l'organisation."
+                        example: '47 Bis Rue Des Laitière'
+                      city:
+                        type: string
+                        description: "Ville de l'organisation."
+                        example: 'Vincennes'
+                      postcode:
+                        type: string
+                        description: "Code postal de l'organisation."
+                        example: '94300'
+                      country:
+                        type: string
+                        description: "Pays de l'organisation."
+                        example: 'France'
+                      description:
+                        type: string
+                        description: "Description de l'organisation."
+                        example: 'zaeae'
+                      status:
+                        type: string
+                        description: "Statut de l'organisation."
+                        example: ''
+        '404':
+          description: 'Utilisateur non trouvé.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: "Message d'erreur indiquant que l'utilisateur n'a pas été trouvé."
+                    example: 'user not found'
+        '400':
+          description: 'Corps de la requête invalide ou champ manquant.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: "Message d'erreur indiquant un problème dans le corps de la requête."
+                    example: 'Invalid request body'
+
+  /api/v1/profil/organisation/profile/upload-image:
+    post:
+      summary: Upload d'image de profil pour l'utilisateur authentifié
+      description: Cette route permet aux utilisateurs authentifiés de télécharger une image de profil. L'image est stockée via le service de stockage et l'URL est mise à jour dans la base de données.
+      tags:
+        - Profil
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Le fichier image à uploader
+      responses:
+        '200':
+          description: Image de profil uploadée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                    description: Statut de succès de l'opération
+                  message:
+                    type: string
+                    example: 'Profile image uploaded successfully'
+                    description: Message de confirmation
+                  url:
+                    type: string
+                    example: 'https://studymove-cdn.s3.amazonaws.com/profile_image_1730106614_photo.png'
+                    description: URL de l'image de profil uploadée
+        '401':
+          description: Non autorisé - Token d'authentification invalide ou manquant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 'Authorization token is required'
+        '400':
+          description: Mauvaise requête - Erreur de validation du fichier ou format incorrect
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 'Invalid form data'
+        '500':
+          description: Erreur interne du serveur - Problème lors de l'upload de l'image
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 'Failed to upload profile image'
+
+  /api/v1/profil/organisation/profile/upload-image/targetId:
+    post:
+      summary: "Téléchargement d'une image de profil pour un utilisateur cible"
+      description: 'Permet de télécharger une image de profil pour un utilisateur spécifique (`targetId`). Nécessite une authentification et les permissions appropriées.'
+      operationId: 'uploadProfileImageForTargetUser'
+      tags:
+        - 'Profil'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "Le fichier d'image de profil à télécharger."
+                targetId:
+                  type: integer
+                  description: "ID de l'utilisateur cible pour qui l'image doit être téléchargée."
+              required:
+                - file
+                - targetId
+      responses:
+        '200':
+          description: 'Image de profil téléchargée avec succès.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    example: 'https://studymove-cdn.s3.amazonaws.com/profile_image_1730106614_photo.png'
+                    description: "URL de l'image de profil téléchargée."
+                  success:
+                    type: boolean
+                    example: true
+                    description: 'Indique si le téléchargement a réussi.'
+                  message:
+                    type: string
+                    example: 'Image de profil téléchargée avec succès'
+                    description: 'Message de confirmation du succès du téléchargement.'
+        '400':
+          description: 'Requête invalide - `targetId` ou fichier manquant ou invalide.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Le champ targetId est requis'
+        '401':
+          description: "Non autorisé - Token d'authentification manquant ou invalide."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Le token d'autorisation est requis"
+        '500':
+          description: "Erreur interne du serveur - Échec du téléchargement ou du traitement de l'image."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Erreur interne du serveur'
+
+  #GET
+  /api/v1/profil/organisation/profile:
+    get:
+      summary: Récupère le profil de l'utilisateur connecté
+      description: |
+        Récupère les informations de profil de l'utilisateur connecté à partir de son token JWT.
+        Cette route est protégée par des middlewares d'authentification et de rôle.
+      tags:
+        - Profil
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+          required: true
+          description: Token JWT de l'utilisateur (nécessite le préfixe `Bearer `).
+      security:
+        - BearerAuth: [] # Spécifie que l'authentification par token est requise
+      responses:
+        '200':
+          description: Profil de l'utilisateur récupéré avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: integer
+                    description: ID unique de l'utilisateur
+                    example: 6
+                  email:
+                    type: string
+                    description: Email de l'utilisateur
+                    example: 'test01@organisation.com'
+                  phone:
+                    type: string
+                    description: Numéro de téléphone de l'utilisateur
+                    example: '+33123456789'
+                  profile_image:
+                    type: string
+                    description: URL de l'image de profil de l'utilisateur
+                    example: ''
+                  roles:
+                    type: array
+                    items:
+                      type: string
+                    description: Liste des rôles de l'utilisateur
+                    example: ['admin']
+                  organisation:
+                    type: object
+                    description: Informations sur l'organisation de l'utilisateur
+                    properties:
+                      name:
+                        type: string
+                        description: Nom de l'organisation
+                        example: 'Organisation Test'
+                      address:
+                        type: string
+                        description: Adresse de l'organisation
+                        example: '123 Main St'
+                      city:
+                        type: string
+                        description: Ville de l'organisation
+                        example: 'Paris'
+                      postcode:
+                        type: string
+                        description: Code postal de l'organisation
+                        example: '75001'
+                      country:
+                        type: string
+                        description: Pays de l'organisation
+                        example: 'France'
+                      description:
+                        type: string
+                        description: Description de l'organisation
+                        example: 'This is a test organisation.'
+                      status:
+                        type: string
+                        description: Status de l'organisation
+                        example: 'Valided'
+        '401':
+          description: Utilisateur non autorisé ou token JWT manquant/invalidé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Unauthorized: No valid user ID found in context'
+        '403':
+          description: Accès refusé en raison de permissions insuffisantes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Forbidden: Insufficient role permissions'
+
+  /api/v1/profil/user/role:
+    get:
+      summary: Récupère le rôle de l'utilisateur
+      description: Cette route permet de récupérer le rôle de l'utilisateur authentifié en fonction de son token JWT.
+      tags:
+        - Profil
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+          required: true
+          description: Token JWT de l'utilisateur (nécessite le préfixe `Bearer `).
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Rôle de l'utilisateur récupéré avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  role:
+                    type: string
+                    description: "Rôle de l'utilisateur"
+                    example: 'admin'
+        '401':
+          description: Token JWT manquant ou invalide
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Unauthorized: invalid token'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur serveur lors de la récupération du rôle de l'utilisateur"
+
+  #PUT
+
+  /api/v1/profil/organisation/profile/update:
+    put:
+      summary: Met à jour le profil de l'utilisateur connecté
+      description: |
+        Cette route permet à un utilisateur authentifié de mettre à jour son propre profil. La mise à jour inclut les informations générales de l'utilisateur et les détails de son organisation. Requiert un token JWT pour l'authentification et un rôle adéquat pour l'autorisation.
+      tags:
+        - Profil
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+          required: true
+          description: Token JWT de l'utilisateur (nécessite le préfixe `Bearer `).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 'Nouveau Nom'
+                address:
+                  type: string
+                  example: 'Nouvelle Adresse'
+                city:
+                  type: string
+                  example: 'Nouvelle Ville'
+                postcode:
+                  type: string
+                  example: '12345'
+                region:
+                  type: string
+                  example: 'Nouvelle Région'
+                phone:
+                  type: string
+                  example: '0707070707'
+                country:
+                  type: string
+                  example: 'Nouveau Pays'
+                email:
+                  type: string
+                  example: 'nouvel.email@example.com'
+                siret:
+                  type: string
+                  example: '123456789'
+                description:
+                  type: string
+                  example: 'Nouvelle description'
+                status:
+                  type: string
+                  example: 'Actif'
+                type:
+                  type: string
+                  example: 'Type mis à jour'
+                is_validated:
+                  type: boolean
+                  example: true
+                is_pending:
+                  type: boolean
+                  example: false
+                is_activated:
+                  type: boolean
+                  example: true
+              required:
+                - name
+                - email
+      responses:
+        '200':
+          description: Profil mis à jour avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'Profile updated successfully'
+        '400':
+          description: Erreur de validation de la requête
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Invalid request payload'
+        '403':
+          description: Accès refusé en raison d'un rôle insuffisant ou d'un token absent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Forbidden: Insufficient role permissions or token missing'
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Failed to update user profile'
+
+  /api/v1/profil/organisation/profile/update/targetId:
+    put:
+      summary: Met à jour le profil d'un utilisateur spécifique
+      description: |
+        Permet à un utilisateur avec des autorisations suffisantes (ex. admin) de mettre à jour le profil d'un autre utilisateur en spécifiant un `targetId`.
+      tags:
+        - Profil
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+          description: Token JWT de l'utilisateur authentifié, nécessitant le préfixe `Bearer `.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetId:
+                  type: integer
+                  example: 8
+                  description: "ID de l'utilisateur cible à mettre à jour"
+                updateData:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: 'Nouveau Nom Cible'
+                    address:
+                      type: string
+                      example: 'Nouvelle Adresse Cible'
+                    city:
+                      type: string
+                      example: 'Nouvelle Ville Cible'
+                    postcode:
+                      type: string
+                      example: '54321'
+                    region:
+                      type: string
+                      example: 'Nouvelle Région Cible'
+                    phone:
+                      type: string
+                      example: '0712345678'
+                    country:
+                      type: string
+                      example: 'Nouveau Pays Cible'
+                    email:
+                      type: string
+                      example: 'nouvel.emailcible@example.com'
+                    siret:
+                      type: string
+                      example: '987654321'
+                    description:
+                      type: string
+                      example: 'Nouvelle description pour le profil cible'
+                    status:
+                      type: string
+                      example: 'Inactif'
+                    type:
+                      type: string
+                      example: 'Type cible mis à jour'
+                    is_validated:
+                      type: boolean
+                      example: true
+                    is_pending:
+                      type: boolean
+                      example: false
+                    is_activated:
+                      type: boolean
+                      example: true
+              required:
+                - targetId
+                - updateData
+      responses:
+        '200':
+          description: Succès - Le profil a été mis à jour
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'Profile updated successfully'
+        '400':
+          description: 'Requête incorrecte - Données de mise à jour invalides'
+        '403':
+          description: 'Accès refusé - Permissions insuffisantes'
+        '500':
+          description: 'Erreur interne du serveur'
+
+  #PASSWORD
+  #POST
+  /api/v1/password/request-reset:
+    post:
+      summary: Demande de réinitialisation de mot de passe
+      description: Envoie un code de réinitialisation au courriel de l'utilisateur pour permettre la réinitialisation de mot de passe.
+      tags:
+        - Mot de passe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: "Adresse email de l'utilisateur"
+                  example: 'test01@organisation.com'
+      responses:
+        '200':
+          description: Code de réinitialisation envoyé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'Reset code sent successfully'
+                  reset_code:
+                    type: integer
+                    description: 'Code de réinitialisation envoyé'
+                    example: 751551
+        '400':
+          description: Requête invalide ou email incorrect
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Invalid email'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur serveur lors de l'envoi du code de réinitialisation"
+
+  /api/v1/password/get-reset-code:
+    post:
+      summary: Récupère le code de réinitialisation de mot de passe
+      description: Permet de récupérer le code de réinitialisation pour un utilisateur en envoyant l'email associé.
+      tags:
+        - Mot de passe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: "Adresse email de l'utilisateur pour lequel récupérer le code de réinitialisation"
+                  example: 'test01@organisation.com'
+      responses:
+        '200':
+          description: Code de réinitialisation récupéré avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: 'Indicateur de réussite de la requête'
+                    example: true
+                  message:
+                    type: string
+                    description: 'Message de confirmation'
+                    example: 'Reset code retrieved successfully'
+                  reset_code:
+                    type: string
+                    description: "Le code de réinitialisation pour l'utilisateur"
+                    example: '80611'
+        '400':
+          description: Requête invalide (email non trouvé ou mal formaté)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Message d'erreur expliquant l'échec de la requête"
+                    example: 'User not found'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Message d'erreur pour une erreur serveur"
+                    example: 'Internal Server Error'
+
+  /api/v1/password/verify-reset-code:
+    post:
+      summary: Vérifie le code de réinitialisation de mot de passe
+      description: Cette route permet de vérifier si le code de réinitialisation de mot de passe est valide.
+      tags:
+        - Mot de passe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: "Adresse email de l'utilisateur"
+                  example: 'test01@organisation.com'
+                reset_code:
+                  type: integer
+                  description: "Code de réinitialisation envoyé à l'utilisateur"
+                  example: 71171
+      responses:
+        '200':
+          description: Code de réinitialisation valide
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: 'Indicateur de réussite de la vérification'
+                    example: true
+                  message:
+                    type: string
+                    description: 'Message indiquant la validité du code de réinitialisation'
+                    example: 'Reset code is valid'
+        '400':
+          description: Requête invalide (ex. code de réinitialisation incorrect)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: 'Erreur dans la requête ou code de réinitialisation incorrect'
+                    example: 'Invalid reset code'
+        '404':
+          description: Utilisateur non trouvé (adresse email inexistante)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Message indiquant que l'utilisateur est introuvable"
+                    example: 'User not found'
+        '401':
+          description: Code expiré
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: 'Message indiquant que le code de réinitialisation a expiré'
+                    example: 'The reset code has expired'
+
+  #UPDATE
+  /api/v1/password/update:
+    put:
+      summary: Mise à jour du mot de passe
+      description: Met à jour le mot de passe de l'utilisateur en utilisant le code de réinitialisation reçu.
+      tags:
+        - Mot de passe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: "Adresse email de l'utilisateur"
+                  example: 'test01@organisation.com'
+                reset_code:
+                  type: string
+                  description: "Code de réinitialisation envoyé à l'utilisateur"
+                  example: '277369'
+                new_password:
+                  type: string
+                  description: 'Nouveau mot de passe'
+                  example: 'newPassword123'
+      responses:
+        '200':
+          description: Mot de passe mis à jour avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'Password updated successfully'
+        '400':
+          description: Requête invalide ou utilisateur non trouvé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'User not found'
+        '500':
+          description: Erreur interne du serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Erreur serveur lors de la mise à jour du mot de passe'
+
+  #EVENTS
+  /api/v1/events/create:
+    post:
+      summary: 'Créer un événement'
+      description: "Crée un nouvel événement avec des détails fournis par l'utilisateur."
+      operationId: 'createEvent'
+      tags:
+        - 'Events'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: "Titre de l'événement"
+                  example: 'Concert de Musique'
+                subtitle:
+                  type: string
+                  description: "Sous-titre de l'événement"
+                  example: 'Une soirée de musique en live'
+                start_date:
+                  type: string
+                  format: date-time
+                  description: "Date et heure de début de l'événement"
+                  example: '2024-12-20T18:00:00Z'
+                end_date:
+                  type: string
+                  format: date-time
+                  description: "Date et heure de fin de l'événement"
+                  example: '2024-12-20T23:00:00Z'
+                start_time:
+                  type: string
+                  format: date-time
+                  description: 'Heure de début pour affichage spécifique'
+                  example: '2024-12-20T18:00:00Z'
+                end_time:
+                  type: string
+                  format: date-time
+                  description: 'Heure de fin pour affichage spécifique'
+                  example: '2024-12-20T23:00:00Z'
+                is_online:
+                  type: boolean
+                  description: "Indique si l'événement est en ligne"
+                  example: false
+                is_visible:
+                  type: boolean
+                  description: "Indique si l'événement est visible pour tous"
+                  example: true
+                use_studibox:
+                  type: boolean
+                  description: 'Utilise la billetterie Studibox si vrai'
+                  example: true
+                ticket_price:
+                  type: number
+                  format: float
+                  description: "Prix d'un billet standard"
+                  example: 50.0
+                ticket_stock:
+                  type: integer
+                  description: 'Nombre total de billets disponibles'
+                  example: 200
+                location:
+                  type: object
+                  description: "Détails de l'emplacement de l'événement"
+                  properties:
+                    address:
+                      type: string
+                      example: '123 Rue de la Musique'
+                    city:
+                      type: string
+                      example: 'Paris'
+                    postcode:
+                      type: string
+                      example: '75001'
+                    region:
+                      type: string
+                      example: 'Île-de-France'
+                    country:
+                      type: string
+                      example: 'France'
+                categories:
+                  type: array
+                  items:
+                    type: string
+                  description: "Liste des catégories pour l'événement"
+                  example: ['Concert', 'Live Music']
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  description: "Liste des tags pour l'événement"
+                  example: ['Pop', 'Jazz', 'Night Event']
+                options:
+                  type: array
+                  description: 'Options additionnelles avec tarifs et stock'
+                  items:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        example: 'VIP Access'
+                      description:
+                        type: string
+                        example: 'Accès au lounge VIP et places premium'
+                      price:
+                        type: number
+                        format: float
+                        example: 120.0
+                      stock:
+                        type: integer
+                        example: 30
+                tarifs:
+                  type: array
+                  description: 'Différents types de billets avec tarifs et stock'
+                  items:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        example: 'Entrée Standard'
+                      description:
+                        type: string
+                        example: 'Accès standard au concert'
+                      price:
+                        type: number
+                        format: float
+                        example: 50.0
+                      stock:
+                        type: integer
+                        example: 150
+                descriptions:
+                  type: array
+                  description: "Informations détaillées sur l'événement"
+                  items:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        example: "Présentation de l'événement"
+                      description:
+                        type: string
+                        example: "Un concert de musique avec les meilleurs artistes de l'année."
+                external_ticketing_url:
+                  type: string
+                  description: 'URL pour la billetterie externe si `use_studibox` est `false`'
+                  example: 'https://external.tickets.com/event123'
+                video_url:
+                  type: string
+                  description: "URL de la vidéo de présentation de l'événement"
+                  example: 'https://video.link/concert'
+                images:
+                  type: array
+                  items:
+                    type: string
+                  description: "URLs des images associées à l'événement"
+                  example:
+                    [
+                      'https://image.link/img1.jpg',
+                      'https://image.link/img2.jpg',
+                    ]
+      responses:
+        '201':
+          description: 'Événement créé avec succès'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  eventID:
+                    type: integer
+                    description: "ID de l'événement créé"
+                    example: 1
+        '400':
+          description: 'Requête invalide'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 'Invalid request payload'
+        '401':
+          description: 'Non autorisé, token manquant ou invalide'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 'Unauthorized'
+        '500':
+          description: 'Erreur interne du serveur'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 'Failed to create event'
+
+  /api/v1/events/get:
+    post:
+      summary: Récupérer les détails d'un événement spécifique
+      description: Permet de récupérer tous les détails d'un événement en fournissant son ID.
+      tags:
+        - Events
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event_id:
+                  type: integer
+                  description: ID de l'événement
+              required:
+                - event_id
+            example:
+              event_id: 6
+      responses:
+        '200':
+          description: Détails de l'événement récupérés avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  subtitle:
+                    type: string
+                  start_date:
+                    type: string
+                    format: date-time
+                  end_date:
+                    type: string
+                    format: date-time
+                  start_time:
+                    type: string
+                    format: date-time
+                  end_time:
+                    type: string
+                    format: date-time
+                  is_online:
+                    type: boolean
+                  ticket_price:
+                    type: number
+                  ticket_stock:
+                    type: integer
+                  address:
+                    type: string
+                  city:
+                    type: string
+                  postcode:
+                    type: string
+                  region:
+                    type: string
+                  country:
+                    type: string
+                  categories:
+                    type: array
+                    items:
+                      type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  options:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        title:
+                          type: string
+                        description:
+                          type: string
+                        price:
+                          type: number
+                        stock:
+                          type: integer
+                  tarifs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        title:
+                          type: string
+                        description:
+                          type: string
+                        price:
+                          type: number
+                        stock:
+                          type: integer
+                  descriptions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        description:
+                          type: string
+              example:
+                id: 6
+                title: 'Concert de Musique - Mise à Jour'
+                subtitle: 'Une soirée de musique en live mise à jour'
+                start_date: '2024-12-20T18:00:00Z'
+                end_date: '2024-12-20T23:00:00Z'
+                start_time: '2024-12-20T18:00:00Z'
+                end_time: '2024-12-20T23:00:00Z'
+                is_online: true
+                ticket_price: 11110
+                ticket_stock: 1111180
+                address: '456 Rue de la Musique'
+                city: 'Paris'
+                postcode: '75002'
+                region: 'Île-de-France'
+                country: 'France'
+                categories: []
+                tags: []
+                options:
+                  - id: 44
+                    title: 'Test 10'
+                    description: 'Accès VIP mis à jour'
+                    price: 10
+                    stock: 200
+                  - id: 39
+                    title: 'Test 1'
+                    description: 'Accès VIP mis à jour'
+                    price: 10
+                    stock: 200
+                  - id: 43
+                    title: 'Test 200'
+                    description: 'Accès VIP mis à jour'
+                    price: 10
+                    stock: 200
+                tarifs:
+                  - id: 47
+                    title: 'Entrée Standard 1000'
+                    description: 'Accès standard mis à jour'
+                    price: 10
+                    stock: 100
+                  - id: 46
+                    title: 'Entrée Standard 2'
+                    description: 'Accès standard mis à jour'
+                    price: 60
+                    stock: 100
+                descriptions:
+                  - title: 'Présentation mise à jour'
+                    description: 'Une soirée spéciale avec les artistes les plus célèbres.'
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: 'Invalid request payload'
+        '404':
+          description: Événement non trouvé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: 'Event not found'
+
+  /api/v1/events/list/target:
+    post:
+      summary: Récupérer la liste des événements pour un utilisateur spécifique
+      operationId: getEventListByTargetID
+      tags:
+        - Events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+      responses:
+        '200':
+          description: Liste des événements récupérée avec succès
+          content:
+            application/json:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  subtitle:
+                    type: string
+                  description:
+                    type: string
+                  start_date:
+                    type: string
+                    format: date-time
+                  end_date:
+                    type: string
+                    format: date-time
+                  start_time:
+                    type: string
+                    format: date-time
+                  end_time:
+                    type: string
+                    format: date-time
+                  is_online:
+                    type: boolean
+                  ticket_price:
+                    type: number
+                    format: float
+                  ticket_stock:
+                    type: integer
+                  address:
+                    type: string
+                  city:
+                    type: string
+                  postcode:
+                    type: string
+                  region:
+                    type: string
+                  country:
+                    type: string
+                  categories:
+                    type: array
+                    items:
+                      type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  image_urls:
+                    type: string
+        '400':
+          description: Requête invalide
+        '404':
+          description: Utilisateur non trouvé
+
+  /api/v1/events/list:
+    get:
+      summary: Récupérer la liste des événements
+      operationId: getEventList
+      tags:
+        - Events
+      security:
+        - bearerAuth: [] # Sécurisé par un token JWT
+      responses:
+        '200':
+          description: Liste des événements récupérée avec succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    title:
+                      type: string
+                    subtitle:
+                      type: string
+                    description:
+                      type: string
+                    start_date:
+                      type: string
+                      format: date-time
+                    end_date:
+                      type: string
+                      format: date-time
+                    start_time:
+                      type: string
+                      format: date-time
+                    end_time:
+                      type: string
+                      format: date-time
+                    is_online:
+                      type: boolean
+                    ticket_price:
+                      type: number
+                      format: float
+                    ticket_stock:
+                      type: integer
+                    address:
+                      type: string
+                    city:
+                      type: string
+                    postcode:
+                      type: string
+                    region:
+                      type: string
+                    country:
+                      type: string
+                    categories:
+                      type: array
+                      items:
+                        type: string
+                    tags:
+                      type: array
+                      items:
+                        type: string
+                    image_urls:
+                      type: string
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '404':
+          description: Non trouvé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /api/v1/events/all:
+    get:
+      summary: Retrieve All Events
+      description: Get a list of all events, including both online and offline events.
+      tags:
+        - Events
+      operationId: getAllEvents
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of all events.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 2
+                    title:
+                      type: string
+                      example: 'Annual Music Festival'
+                    start_date:
+                      type: string
+                      format: date-time
+                      example: '2024-06-15T10:00:00Z'
+                    start_time:
+                      type: string
+                      format: date-time
+                      example: '2024-06-15T18:00:00Z'
+                    is_online:
+                      type: boolean
+                      example: false
+                    is_activated:
+                      type: boolean
+                      example: false
+                    image_urls:
+                      type: string
+                      example: '["https://studymove-cdn.s3.amazonaws.com/event_image_1730136350_Capture d’écran 2024-10-27 à 02.20.57.png"]'
+                  example:
+                    - id: 1
+                      title: 'Annual Music Festival'
+                      start_date: '2024-06-15T10:00:00Z'
+                      start_time: '2024-06-15T18:00:00Z'
+                      is_online: false
+                      is_activated: false
+                      image_urls: '"https://studymove-cdn.s3.amazonaws.com/event_image_1730136350_Capture d’écran 2024-10-27 à 02.20.57.png"'
+                    - id: 2
+                      title: 'Virtual Coding Bootcamp'
+                      start_date: '2024-08-01T09:00:00Z'
+                      start_time: '2024-08-05T17:00:00Z'
+                      is_online: true
+                      is_activated: true
+                      image_urls: '"https://studymove-cdn.s3.amazonaws.com/event_image_1730136350_Capture d’écran 2024-10-27 à 02.20.57.png"'
+                    - id: 3
+                      title: 'Food and Culture Fair'
+                      start_date: '2024-10-10T12:00:00Z'
+                      start_time: '2024-10-12T20:00:00Z'
+                      is_online: false
+                      is_activated: false
+                      image_urls: '"https://studymove-cdn.s3.amazonaws.com/event_image_1730136350_Capture d’écran 2024-10-27 à 02.20.57.png" '
+        '401':
+          description: Unauthorized - Token is invalid or missing.
+        '500':
+          description: Internal server error.
+
+  /api/v1/events/categories:
+    get:
+      summary: Récupérer toutes les catégories d'événements
+      description: Cette route permet de récupérer toutes les catégories disponibles pour les événements.
+      tags:
+        - Events
+      security:
+        - bearerAuth: [] # Authentification via token
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          description: "JWT d'authentification au format Bearer token (Bearer <token>)"
+      responses:
+        '200':
+          description: Liste des catégories d'événements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example:
+                - 'Musique'
+                - 'Soirée'
+                - 'Voyage'
+                - 'Bar'
+                - 'Concert'
+                - 'Live Music'
+        '401':
+          description: Non autorisé - Le token est manquant ou invalide.
+        '500':
+          description: Erreur interne du serveur
+
+  /api/v1/events/tags:
+    get:
+      summary: Récupérer tous les tags d'événements
+      description: Cette route permet de récupérer tous les tags disponibles pour les événements.
+      tags:
+        - Events
+      security:
+        - bearerAuth: [] # Authentification via token
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          description: "JWT d'authentification au format Bearer token (Bearer <token>)"
+      responses:
+        '200':
+          description: Liste des tags d'événements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example:
+                - 'TikTok'
+                - 'Hype'
+                - 'Fun'
+                - 'Drole'
+                - 'Pop'
+                - 'Jazz'
+                - 'Night Event'
+        '401':
+          description: Non autorisé - Le token est manquant ou invalide.
+        '500':
+          description: Erreur interne du serveur
+
+  /api/v1/events/update:
+    put:
+      summary: Met à jour un événement existant
+      description: Mettre à jour les informations d'un événement, y compris les options, tarifs et descriptions associées.
+      tags:
+        - Events
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+          description: Token JWT de l'utilisateur (nécessite le préfixe `Bearer `).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event_id:
+                  type: integer
+                  description: ID de l'événement à mettre à jour
+                  example: 6
+                title:
+                  type: string
+                  description: Titre de l'événement
+                  example: 'Concert de Musique - Mise à Jour'
+                subtitle:
+                  type: string
+                  description: Sous-titre de l'événement
+                  example: 'Une soirée de musique en live mise à jour'
+                start_date:
+                  type: string
+                  format: date-time
+                  description: Date de début de l'événement
+                  example: '2024-12-20T18:00:00Z'
+                end_date:
+                  type: string
+                  format: date-time
+                  description: Date de fin de l'événement
+                  example: '2024-12-20T23:00:00Z'
+                start_time:
+                  type: string
+                  format: date-time
+                  description: Heure de début de l'événement
+                  example: '2024-12-20T18:00:00Z'
+                end_time:
+                  type: string
+                  format: date-time
+                  description: Heure de fin de l'événement
+                  example: '2024-12-20T23:00:00Z'
+                is_online:
+                  type: boolean
+                  description: Indique si l'événement est en ligne
+                  example: true
+                is_visible:
+                  type: boolean
+                  description: Indique si l'événement est visible publiquement
+                  example: false
+                use_studibox:
+                  type: boolean
+                  description: Indique si l'événement utilise la billetterie Studibox
+                  example: false
+                ticket_price:
+                  type: number
+                  format: float
+                  description: Prix du billet pour l'événement
+                  example: 11110.0
+                ticket_stock:
+                  type: integer
+                  description: Stock de billets disponible
+                  example: 1111180
+                location:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                      description: Adresse de l'événement
+                      example: '456 Rue de la Musique'
+                    city:
+                      type: string
+                      description: Ville de l'événement
+                      example: 'Paris'
+                    postcode:
+                      type: string
+                      description: Code postal de l'événement
+                      example: '75002'
+                    region:
+                      type: string
+                      description: Région de l'événement
+                      example: 'Île-de-France'
+                    country:
+                      type: string
+                      description: Pays de l'événement
+                      example: 'France'
+                options:
+                  type: array
+                  description: Liste des options pour l'événement
+                  items:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        description: Titre de l'option
+                        example: 'Test 1'
+                      description:
+                        type: string
+                        description: Description de l'option
+                        example: 'Accès VIP mis à jour'
+                      price:
+                        type: number
+                        format: float
+                        description: Prix de l'option
+                        example: 10.0
+                      stock:
+                        type: integer
+                        description: Stock disponible pour l'option
+                        example: 200
+                tarifs:
+                  type: array
+                  description: Liste des tarifs pour l'événement
+                  items:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        description: Titre du tarif
+                        example: 'Entrée Standard 1000'
+                      description:
+                        type: string
+                        description: Description du tarif
+                        example: 'Accès standard mis à jour'
+                      price:
+                        type: number
+                        format: float
+                        description: Prix du tarif
+                        example: 10.0
+                      stock:
+                        type: integer
+                        description: Stock disponible pour le tarif
+                        example: 100
+                descriptions:
+                  type: array
+                  description: Liste des descriptions pour l'événement
+                  items:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        description: Titre de la description
+                        example: 'Présentation mise à jour'
+                      description:
+                        type: string
+                        description: Texte de la description
+                        example: 'Une soirée spéciale avec les artistes les plus célèbres.'
+                video_url:
+                  type: string
+                  description: URL de la vidéo associée à l'événement
+                  example: 'https://video.link/concert_updated'
+                images:
+                  type: array
+                  description: Liste des URLs des images associées à l'événement
+                  items:
+                    type: string
+                    example: 'https://image.link/img1_updated.jpg'
+      responses:
+        '200':
+          description: Événement mis à jour avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ID:
+                    type: integer
+                    description: ID de l'événement mis à jour
+                    example: 6
+                  title:
+                    type: string
+                    description: Titre de l'événement
+                    example: 'Concert de Musique - Mise à Jour'
+                  subtitle:
+                    type: string
+                    description: Sous-titre de l'événement
+                    example: 'Une soirée de musique en live mise à jour'
+                  start_date:
+                    type: string
+                    format: date-time
+                    description: Date de début de l'événement
+                  end_date:
+                    type: string
+                    format: date-time
+                    description: Date de fin de l'événement
+                  options:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                          example: 'Test 1'
+                        description:
+                          type: string
+                          example: 'Accès VIP mis à jour'
+                        price:
+                          type: number
+                          format: float
+                          example: 10.0
+                        stock:
+                          type: integer
+                          example: 200
+                  tarifs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                          example: 'Entrée Standard 1000'
+                        description:
+                          type: string
+                          example: 'Accès standard mis à jour'
+                        price:
+                          type: number
+                          format: float
+                          example: 10.0
+                        stock:
+                          type: integer
+                          example: 100
+                  descriptions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                          example: 'Présentation mise à jour'
+                        description:
+                          type: string
+                          example: 'Une soirée spéciale avec les artistes les plus célèbres.'
+        '400':
+          description: Requête invalide (données manquantes ou incorrectes)
+        '401':
+          description: Authentification requise (jeton manquant ou invalide)
+        '500':
+          description: Erreur interne du serveur
+
+  /api/v1/events/upload-image:
+    post:
+      summary: "Upload d'images pour un événement"
+      description: "Permet d'uploader une ou plusieurs images pour un événement. Les images seront stockées et renverront des URLs publiques."
+      tags:
+        - 'Events'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: 'Les fichiers image à uploader (un ou plusieurs fichiers)'
+      responses:
+        '200':
+          description: 'Images uploadées avec succès'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  urls:
+                    type: array
+                    items:
+                      type: string
+                      format: uri
+                    description: 'Liste des URLs des images uploadées'
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'Event images uploaded successfully'
+        '400':
+          description: 'Données de formulaire invalides ou requête incorrecte'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'Invalid form data'
+        '401':
+          description: 'Non autorisé - Token JWT invalide ou manquant'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'Authorization token is required'
+        '500':
+          description: "Erreur interne du serveur lors de l'upload des images"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: 'Failed to upload event images'
+
+  #ORGANISATIONS
+
+  /api/v1/organisations/all:
+    get:
+      summary: Récupérer toutes les organisations
+      description: Récupère la liste de toutes les organisations avec leurs informations de statut, validation, activation, et rôle.
+      tags:
+        - Organisations
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          description: |
+            Token JWT pour authentification au format `Bearer <token>`.
+      responses:
+        '200':
+          description: Liste de toutes les organisations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Organisations retrieved successfully
+                  organisations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user_id:
+                          type: integer
+                          example: 1
+                        name:
+                          type: string
+                          example: Organisation Example 1
+                        is_validated:
+                          type: boolean
+                          example: true
+                        is_activated:
+                          type: boolean
+                          example: false
+                        is_pending:
+                          type: boolean
+                          example: true
+                        role_name:
+                          type: string
+                          example: admin
+                        profile_image:
+                          type: string
+                          example: https://example.com/image1.jpg
+                        status:
+                          type: string
+                          example: Active
+              examples:
+                example-response:
+                  summary: Exemple de réponse avec deux organisations
+                  value:
+                    success: true
+                    message: Organisations retrieved successfully
+                    organisations:
+                      - user_id: 1
+                        name: Organisation Example 1
+                        is_validated: true
+                        is_activated: true
+                        is_pending: false
+                        role_name: admin
+                        profile_image: https://example.com/image1.jpg
+                        status: Active
+                      - user_id: 2
+                        name: Organisation Example 2
+                        is_validated: false
+                        is_activated: false
+                        is_pending: true
+                        role_name: business
+                        profile_image: https://example.com/image2.jpg
+                        status: Pending
+        '401':
+          description: Authentification requise
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Unauthorized access
+
+  /api/v1/organisations/all/active:
+    get:
+      summary: Récupérer les organisations actives
+      description: Récupère la liste des organisations actives.
+      tags:
+        - Organisations
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          description: |
+            Token JWT pour authentification au format `Bearer <token>`.
+      responses:
+        '200':
+          description: Liste des organisations actives
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Active organisations retrieved successfully
+                  organisations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user_id:
+                          type: integer
+                          example: 1
+                        name:
+                          type: string
+                          example: Organisation Active 1
+                        is_validated:
+                          type: boolean
+                          example: true
+                        is_activated:
+                          type: boolean
+                          example: true
+                        is_pending:
+                          type: boolean
+                          example: false
+                        role_name:
+                          type: string
+                          example: admin
+                        profile_image:
+                          type: string
+                          example: https://example.com/image1.jpg
+                        status:
+                          type: string
+                          example: Active
+              examples:
+                example-response:
+                  summary: Exemple de réponse avec deux organisations actives
+                  value:
+                    success: true
+                    message: Active organisations retrieved successfully
+                    organisations:
+                      - user_id: 1
+                        name: Organisation Active 1
+                        is_validated: true
+                        is_activated: true
+                        is_pending: false
+                        role_name: admin
+                        profile_image: https://example.com/image1.jpg
+                        status: Active
+                      - user_id: 2
+                        name: Organisation Active 2
+                        is_validated: true
+                        is_activated: true
+                        is_pending: false
+                        role_name: business
+                        profile_image: https://example.com/image2.jpg
+                        status: Active
+
+  /api/v1/organisations/all/inactive:
+    get:
+      summary: Récupérer les organisations inactives
+      description: Récupère la liste des organisations inactives.
+      tags:
+        - Organisations
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          description: |
+            Token JWT pour authentification au format `Bearer <token>`.
+      responses:
+        '200':
+          description: Liste des organisations inactives
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Inactive organisations retrieved successfully
+                  organisations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user_id:
+                          type: integer
+                          example: 3
+                        name:
+                          type: string
+                          example: Organisation Inactive 1
+                        is_validated:
+                          type: boolean
+                          example: true
+                        is_activated:
+                          type: boolean
+                          example: false
+                        is_pending:
+                          type: boolean
+                          example: false
+                        role_name:
+                          type: string
+                          example: school
+                        profile_image:
+                          type: string
+                          example: https://example.com/image3.jpg
+                        status:
+                          type: string
+                          example: Inactive
+              examples:
+                example-response:
+                  summary: Exemple de réponse avec une organisation inactive
+                  value:
+                    success: true
+                    message: Inactive organisations retrieved successfully
+                    organisations:
+                      - user_id: 3
+                        name: Organisation Inactive 1
+                        is_validated: true
+                        is_activated: false
+                        is_pending: false
+                        role_name: school
+                        profile_image: https://example.com/image3.jpg
+                        status: Inactive
+
+  /api/v1/organisations/all/pending:
+    get:
+      summary: Récupérer les organisations en attente
+      description: Récupère la liste des organisations en attente.
+      tags:
+        - Organisations
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          description: |
+            Token JWT pour authentification au format `Bearer <token>`.
+      responses:
+        '200':
+          description: Liste des organisations en attente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Pending organisations retrieved successfully
+                  organisations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user_id:
+                          type: integer
+                          example: 4
+                        name:
+                          type: string
+                          example: Organisation Pending 1
+                        is_validated:
+                          type: boolean
+                          example: false
+                        is_activated:
+                          type: boolean
+                          example: false
+                        is_pending:
+                          type: boolean
+                          example: true
+                        role_name:
+                          type: string
+                          example: business
+                        profile_image:
+                          type: string
+                          example: https://example.com/image4.jpg
+                        status:
+                          type: string
+                          example: Pending
+              examples:
+                example-response:
+                  summary: Exemple de réponse avec une organisation en attente
+                  value:
+                    success: true
+                    message: Pending organisations retrieved successfully
+                    organisations:
+                      - user_id: 4
+                        name: Organisation Pending 1
+                        is_validated: false
+                        is_activated: false
+                        is_pending: true
+                        role_name: business
+                        profile_image: https://example.com/image4.jpg
+                        status: Pending
+
+  /api/v1/organisations/all/suspended:
+    get:
+      summary: Récupérer les organisations suspendues
+      description: Récupère la liste des organisations suspendues.
+      tags:
+        - Organisations
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          description: |
+            Token JWT pour authentification au format `Bearer <token>`.
+      responses:
+        '200':
+          description: Liste des organisations suspendues
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Suspended organisations retrieved successfully
+                  organisations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user_id:
+                          type: integer
+                          example: 5
+                        name:
+                          type: string
+                          example: Organisation Suspended 1
+                        is_validated:
+                          type: boolean
+                          example: true
+                        is_activated:
+                          type: boolean
+                          example: false
+                        is_pending:
+                          type: boolean
+                          example: false
+                        role_name:
+                          type: string
+                          example: association
+                        profile_image:
+                          type: string
+                          example: https://example.com/image5.jpg
+                        status:
+                          type: string
+                          example: Suspended
+              examples:
+                example-response:
+                  summary: Exemple de réponse avec une organisation suspendue
+                  value:
+                    success: true
+                    message: Suspended organisations retrieved successfully
+                    organisations:
+                      - user_id: 5
+                        name: Organisation Suspended 1
+                        is_validated: true
+                        is_activated: false
+                        is_pending: false
+                        role_name: association
+                        profile_image: https://example.com/image5.jpg
+                        status: Suspended

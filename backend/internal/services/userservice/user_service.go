@@ -1,9 +1,10 @@
-// backend/internal/services/userservice/user_service.go
+// commentairebackend/internal/services/userservice/user_service.go
 package userservice
 
 import (
-    "backend/internal/db/models"
-    "gorm.io/gorm"
+	"backend/internal/db/models"
+
+	"gorm.io/gorm"
 )
 
 // UserService représente le service pour gérer les utilisateurs.

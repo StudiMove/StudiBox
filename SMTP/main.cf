@@ -1,0 +1,7 @@
+myhostname = localhost
+mydomain = localdomain
+myorigin = /etc/mailname
+mydestination = localhost, localhost.localdomain
+relayhost = mailhog:1025
+inet_interfaces = all
+inet_protocols = all

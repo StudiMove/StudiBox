@@ -1,21 +1,23 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type BusinessUser struct {
     gorm.Model
-    UserID        uint   `gorm:"primaryKey"`  // Référence à l'utilisateur
-    User          User   `gorm:"foreignKey:UserID"` // Relation avec le modèle User
-    CompanyName   string `gorm:"not null"`
-    SIRET         string
-    Address       string
-    City          string
-    Postcode      string
-    Region        string
-    Country       string
-    CreationDate  string
-    IsValidated   bool   `gorm:"default:false"` // Validé par un admin
-    IsActivated   bool   `gorm:"default:false"` // Activé par un admin
-    CreatedAt     string `gorm:"not null"`      // Date de création
-    UpdatedAt     string `gorm:"not null"`      // Date de mise à jour
+    UserID      uint   `gorm:"uniqueIndex" json:"userId"`           // Référence unique à l'utilisateur
+    User        User   `gorm:"foreignKey:UserID" json:"user"`       // Relation avec le modèle User
+    CompanyName string `gorm:"not null" json:"name"`
+    SIRET       string `json:"siret"`
+    Address     string `json:"address"`
+    City        string `json:"city"`
+    Postcode    string `json:"postcode"`
+    Region      string `json:"region"`
+    Country     string `json:"country"`
+    Description string `json:"description"`
+    Status      string `json:"status" gorm:"default:En Attente" `
+    IsValidated bool   `gorm:"default:false" json:"isValidated"`    // Validé par un admin
+    IsActivated bool   `gorm:"default:false" json:"isActivated"`    // Activé par un admin
+    IsPending   bool   `gorm:"default:true" json:"isPending"`       // En attente d'approbation
 }
