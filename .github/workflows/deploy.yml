@@ -24,12 +24,20 @@ jobs:
         key: ${{ secrets.DEPLOY_KEY }}
         port: ${{ secrets.DEPLOY_PORT }}
 
-    # Étape 3: Déploiement en Production
+    # Étape 3: Ajouter l'hôte à known_hosts
+    - name: Add Server to known_hosts
+      run: |
+        ssh-keyscan -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+    # Étape 4: Déploiement en Production
     - name: Deploy to Production
       run: |
         echo "Déploiement en production sur ${{ secrets.DEPLOY_HOST }}..."
         ssh -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
         cd /home/debian/projects/StudyBox
+        echo "Passage sur la branche main..."
+        git fetch origin
+        git checkout main
         echo "Mise à jour du code source depuis Git..."
         git pull origin main
         echo "Mise à jour des images Docker..."
