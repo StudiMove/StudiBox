@@ -25,23 +25,11 @@ services:
       S3_BUCKET: ${S3_BUCKET}
       SMTP_SERVER: mailhog
       SMTP_PORT: 1025
-
     ports:
       - '8080:8080'
     depends_on:
       - db
       - mailhog
-
-    networks:
-      - studymovenetwork
-
-  pgadmin:
-    image: dpage/pgadmin4
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-    ports:
-      - '5050:80'
     networks:
       - studymovenetwork
 
@@ -60,7 +48,15 @@ services:
     networks:
       - studymovenetwork
 
-
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - '5050:80'
+    networks:
+      - studymovenetwork
 
   smtp:
     build:
@@ -80,6 +76,7 @@ services:
       - '1025:1025'
     networks:
       - studymovenetwork
+
   swagger:
     build:
       context: ./ApiDocumentation
