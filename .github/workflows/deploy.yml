@@ -30,8 +30,10 @@ jobs:
         echo "Déploiement en production sur ${{ secrets.DEPLOY_HOST }}..."
         ssh -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
         cd /home/debian/projects/StudyBox
+        echo "Mise à jour du code source depuis Git..."
+        git pull origin main
         echo "Mise à jour des images Docker..."
-        docker-compose -f pull
+        docker-compose -f docker-compose.prod.yml pull
         echo "Redémarrage des services Docker..."
-        docker-compose -f up -d --remove-orphans
+        docker-compose -f docker-compose.prod.yml up -d --remove-orphans
         EOF
