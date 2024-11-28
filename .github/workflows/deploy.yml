@@ -24,9 +24,10 @@ jobs:
         key: ${{ secrets.DEPLOY_KEY }}
         port: ${{ secrets.DEPLOY_PORT }}
 
-    # Étape 3: Ajouter l'hôte à known_hosts
+    # Étape 3: Créer le dossier ~/.ssh et ajouter l'hôte à known_hosts
     - name: Add Server to known_hosts
       run: |
+        mkdir -p ~/.ssh
         ssh-keyscan -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
     # Étape 4: Déploiement en Production
