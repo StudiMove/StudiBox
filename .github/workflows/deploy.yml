@@ -33,13 +33,18 @@ jobs:
     # Étape 4: Vérification de l'accès SSH
     - name: Debug SSH Connection
       run: |
-        ssh -o StrictHostKeyChecking=no -i ${{ secrets.DEPLOY_KEY }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "echo 'Connexion réussie'"
+        echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "echo 'Connexion réussie'"
+
 
     # Étape 5: Déploiement en Production
     - name: Deploy to Production
       run: |
+        echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
         echo "Déploiement en production sur ${{ secrets.DEPLOY_HOST }}..."
-        ssh -o StrictHostKeyChecking=no -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
         cd /home/debian/projects/StudyBox
         echo "Passage sur la branche main..."
         git fetch origin
