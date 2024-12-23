@@ -1,7 +1,5 @@
-# Étape 1 : Build
 FROM node:20-alpine AS build
 
-# Définir le répertoire de travail
 WORKDIR /app
 
 # Copier uniquement les fichiers nécessaires pour installer les dépendances
@@ -13,10 +11,10 @@ RUN npm install --legacy-peer-deps
 # Copier tout le code source
 COPY . .
 
-# Construire le projet pour la production
+# Construire le projet
 RUN npm run build
 
-# Étape 2 : Serveur Nginx
+# Étape 2 : Serveur
 FROM nginx:alpine
 
 # Supprime les fichiers temporaires pour économiser de l'espace
@@ -24,9 +22,10 @@ RUN rm -rf /var/cache/apk/*
 
 # Copier les fichiers construits depuis l'étape de build
 COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Exposer le port 80 pour le serveur web
+# Exposer le port 80
 EXPOSE 80
 
-# Lancer Nginx
+# Démarrer Nginx
 CMD ["nginx", "-g", "daemon off;"]

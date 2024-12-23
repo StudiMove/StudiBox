@@ -32,6 +32,7 @@ type EventOptionResponse struct {
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
 	Stock       int     `json:"stock"`
+	PriceID     string  `json:"price_id"`
 }
 
 type EventTarifResponse struct {
@@ -40,6 +41,7 @@ type EventTarifResponse struct {
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
 	Stock       int     `json:"stock"`
+	PriceID     string  `json:"price_id"`
 }
 
 type UploadEventImageResponse struct {

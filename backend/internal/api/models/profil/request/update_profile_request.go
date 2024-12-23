@@ -18,3 +18,16 @@ type UpdateProfileRequest struct {
 	IsPending   bool   `json:"is_pending"`
 	IsActivated bool   `json:"is_activated"`
 }
+
+type UpdateUserRequest struct {
+	Street       *string `json:"street,omitempty"`
+	NumberStreet *string `json:"numberStreet,omitempty"`
+	City         *string `json:"city,omitempty"`
+	Postcode     *string `json:"postcode,omitempty"`
+	Region       *string `json:"region,omitempty"`
+	Country      *string `json:"country,omitempty"`
+	Email        *string `json:"email,omitempty"`
+	Phone        *string `json:"phone,omitempty"`
+	OldPassword  *string `json:"oldPassword,omitempty"`
+	NewPassword  *string `json:"newPassword,omitempty"`
+}

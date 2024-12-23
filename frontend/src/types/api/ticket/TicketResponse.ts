@@ -1,0 +1,114 @@
+export interface TicketDetailsResponse {
+    ID: number;
+    CreatedAt: string;
+    UpdatedAt: string;
+    DeletedAt?: string | null;
+    UUID: string;
+    UserID: number;
+    User: {
+      ID: number;
+      CreatedAt: string;
+      UpdatedAt: string;
+      DeletedAt?: string | null;
+      firstName: string;
+      lastName: string;
+      pseudo: string;
+      email: string;
+      password: string;
+      phone: string;
+      profileImage: string;
+      birthDate: string;
+      city: string;
+      profileType: string;
+      parrainageCode: string;
+      parrainCode: string;
+      associationId: number;
+      schoolId: number;
+      studiboxCoins: number;
+      roles?: Array<string> | null;
+      createdAt: string;
+      updatedAt: string;
+      refreshToken: string;
+    };
+    EventID: number;
+    Event: {
+      ID: number;
+      CreatedAt: string;
+      UpdatedAt: string;
+      DeletedAt?: string | null;
+      hostId: number;
+      hostType: string;
+      user_id: number;
+      product_id: string;
+      imageUrls: string; // Une chaîne contenant des URLs séparées par des virgules
+      videoUrl: string;
+      title: string;
+      subtitle: string;
+      startDate: string;
+      endDate: string;
+      startTime: string;
+      endTime: string;
+      isOnline: boolean;
+      isVisible: boolean;
+      useStudibox: boolean;
+      ticketPrice: number;
+      ticketStock: number;
+      address: string;
+      city: string;
+      postcode: string;
+      region: string;
+      country: string;
+      statistics: string;
+      ticketsSold: number;
+      revenue: number;
+      isValidatedByAdmin: boolean;
+      descriptions?: string | null;
+      options?: Array<string> | null;
+      tarifs?: Array<string> | null;
+      tickets?: Array<string> | null;
+      categories?: Array<string> | null;
+      tags?: Array<string> | null;
+    };
+    TicketNumberReadable: string;
+    Status: string;
+    Tarifs: Array<{
+      ID: number;
+      CreatedAt: string;
+      UpdatedAt: string;
+      DeletedAt?: string | null;
+      TicketID: number;
+      TarifID: number;
+      Tarif: {
+        ID: number;
+        CreatedAt: string;
+        UpdatedAt: string;
+        DeletedAt?: string | null;
+        eventId: number;
+        title: string;
+        price: number;
+        stock: number;
+        description: string;
+        price_id: string;
+      };
+    }>;
+    Options: Array<{
+      ID: number;
+      CreatedAt: string;
+      UpdatedAt: string;
+      DeletedAt?: string | null;
+      TicketID: number;
+      OptionID: number;
+      Option: {
+        ID: number;
+        CreatedAt: string;
+        UpdatedAt: string;
+        DeletedAt?: string | null;
+        eventId: number;
+        title: string;
+        price: number;
+        description: string;
+        price_id: string;
+      };
+    }>;
+  }
+  

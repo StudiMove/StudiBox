@@ -20,4 +20,7 @@ func RegisterAuthRoutes(router *mux.Router, authService *auth.AuthService, httpC
 	router.HandleFunc("/register/user", registerHandler.HandleRegisterNormalUser).Methods("POST", "OPTIONS")
 
 	router.HandleFunc("/get-user-id", handler.HandleGetUserIDByEmail).Methods("POST", "OPTIONS")
+
+	router.HandleFunc("/auto-authenticate", handler.HandleAutoAuthenticate).Methods("POST", "OPTIONS")
+
 }

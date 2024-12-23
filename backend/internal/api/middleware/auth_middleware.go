@@ -38,6 +38,10 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		// Ajouter les claims entières au contexte
 		log.Printf("Token validated successfully. UserID: %v", claims.UserID)
 		ctx := context.WithValue(r.Context(), "user", claims)
+		log.Printf("REGARDE ICI")
+
+		log.Println("Requête reçue pour :", r.URL.Path)
+		log.Println("Headers :", r.Header)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

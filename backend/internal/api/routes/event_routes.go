@@ -6,6 +6,7 @@ import (
 	"backend/internal/services/auth"
 	"backend/internal/services/event"
 	"backend/internal/services/storage"
+	"backend/internal/services/stripe"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -13,9 +14,9 @@ import (
 )
 
 // RegisterEventRoutes enregistre les routes pour la gestion des événements
-func RegisterEventRoutes(router *mux.Router, db *gorm.DB, storageService storage.StorageService, authService *auth.AuthService) {
-	eventService := event.NewEventService(db, storageService)     // Initialise le service événement
-	eventUserActionService := event.NewEventUserActionService(db) // Nouveau service
+func RegisterEventRoutes(router *mux.Router, db *gorm.DB, storageService storage.StorageService, authService *auth.AuthService, stripeService *stripe.StripeService) {
+	eventService := event.NewEventService(db, storageService, stripeService) // Initialise le service événement
+	eventUserActionService := event.NewEventUserActionService(db)            // Nouveau service
 
 	// Créer une instance du handler pour les événements
 	createEventHandler := events.NewCreateEventHandler(eventService) // Créez votre handler ici

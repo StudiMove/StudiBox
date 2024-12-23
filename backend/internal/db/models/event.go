@@ -12,6 +12,7 @@ type Event struct {
 	HostID             uint      `json:"hostId"`   // Référence à l'hôte
 	HostType           string    `json:"hostType"` // Type de l'hôte
 	UserID             uint      `json:"user_id"`
+	ProductID          string    `json:"product_id"`
 	ImageURLs          string    `json:"imageUrls"` // Stocke les URLs des images en format JSON
 	VideoURL           string    `json:"videoUrl"`
 	Title              string    `gorm:"not null" json:"title"`

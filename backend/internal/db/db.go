@@ -31,6 +31,7 @@ func ConnectDatabase() *gorm.DB {
 func Migrate() {
 	err := DB.AutoMigrate(
 		&models.User{},
+		&models.UserLocation{},
 		&models.Role{},
 		&models.UserRole{},
 		&models.BusinessUser{},
@@ -53,8 +54,11 @@ func Migrate() {
 		&models.EventCategoryEvent{},
 		&models.EventTagEvent{},
 		&models.EventUserAction{},
-
 		&models.Referral{},
+		&models.StripeWebhook{},
+		&models.TicketEventOption{},
+		&models.TicketEventTarif{},
+		&models.StudiboxTransaction{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)

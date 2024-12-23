@@ -1,21 +1,3 @@
-// interface SecondaryButtonProps {
-//   text: string;
-//   onClick?: () => void; // Ajoutez cette prop si vous souhaitez gérer un clic
-// }
-
-// const SecondaryButton = function ({ text, onClick }: SecondaryButtonProps) {
-//   return (
-//     <button
-//       onClick={onClick}
-//       className="bg-secondary text-black py-2 px-4 rounded hover:bg-teal-500 transition duration-300"
-//     >
-//       {text}
-//     </button>
-//   );
-// };
-
-// export default SecondaryButton;
-
 interface SecondaryButtonOutlineProps {
   label: string; // Texte du bouton
   type?: 'button' | 'submit' | 'reset'; // Type de bouton

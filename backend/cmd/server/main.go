@@ -112,12 +112,17 @@ import (
 	"backend/config"
 	"backend/internal/api/routes"
 	"backend/internal/db"
+	"backend/internal/scheduler" // Import du package scheduler
 	"backend/internal/services/auth"
 	"backend/internal/services/event"
 	"backend/internal/services/password"
 	"backend/internal/services/profilservice"
 	"backend/internal/services/storage"
+	"backend/internal/services/stripe"
+	"backend/internal/services/ticket"
 	"backend/internal/services/userservice"
+	"backend/internal/services/webhook"
+
 	"backend/pkg/httpclient"
 )
 
@@ -138,18 +143,28 @@ func main() {
 	fmt.Println("Initialisation des services...")
 	s3Service := storage.NewS3Storage(config.AppConfig.S3Bucket)
 	apiClient := httpclient.NewAPIClient(config.AppConfig.APIBaseURL)
+	stripeService := stripe.NewStripeService()
 	authService := auth.NewAuthService(dbConnection)
-	eventService := event.NewEventService(dbConnection, s3Service)
+	eventService := event.NewEventService(dbConnection, s3Service, stripeService)
 	passwordService := password.NewPasswordResetService(dbConnection)
 	profilService := profilservice.NewProfilService(dbConnection, s3Service)
+	ticketService := ticket.NewTicketService(dbConnection) // Initialisation du TicketService
 
 	userService := userservice.NewUserService(dbConnection)
 	jwtSecret := config.AppConfig.JwtSecretAccessKey
 
+	// Initialiser le service Webhook
+	webhookService := webhook.NewWebhookService(dbConnection)
+
+	// Démarrer le scheduler dans une goroutine
+	fmt.Println("Démarrage du scheduler...")
+	go scheduler.StartScheduler(dbConnection)
+
 	// Configurer le routeur avec les routes et middlewares
 	fmt.Println("Configuration des routes...")
-	router := routes.InitRouter(authService, eventService, apiClient, passwordService, profilService, userService, s3Service, dbConnection, jwtSecret)
+	// router := routes.InitRouter(authService, eventService, apiClient, passwordService, profilService, userService, stripeService, s3Service, dbConnection, jwtSecret)
 
+	router := routes.InitRouter(authService, eventService, apiClient, passwordService, profilService, userService, stripeService, s3Service, dbConnection, jwtSecret, webhookService, ticketService)
 	// Démarrer le serveur
 	serverAddress := fmt.Sprintf(":%s", config.AppConfig.ServerPort)
 	fmt.Printf("Démarrage du serveur sur le port %s\n", config.AppConfig.ServerPort)

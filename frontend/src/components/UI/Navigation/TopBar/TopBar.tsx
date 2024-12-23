@@ -3,6 +3,7 @@ import Breadcrumb from '../Breadcrumb/Breadcrumb';
 import { RootState } from '../../../../../store';
 import { useState } from 'react';
 import ProfilPopup from '../ProfilPopup/ProfilPopup';
+import defaultImageUrl from '../../../../assets/defaultProfileImage.png';
 interface TopBarProps {
   isCollapsed: boolean;
 }
@@ -13,18 +14,24 @@ const TopBar = ({ isCollapsed }: TopBarProps) => {
     (state: RootState) => state.profileImage.profileImage,
   );
 
-  const defaultImageUrl = ''; // Image par défaut
   const [isProfilePopupVisible, setProfilePopupVisible] = useState(false);
+  const closeProfilePopup = () => setProfilePopupVisible(false);
+
+  {isProfilePopupVisible && (
+    <div className="absolute right-8 top-24 z-40">
+      <ProfilPopup onClose={closeProfilePopup} />
+    </div>
+  )}
 
   const handleProfileClick = () => {
     setProfilePopupVisible((prev) => !prev); // Toggle pour afficher/masquer le ProfilPopup
   };
 
   // Fonction de gestion d'erreur de chargement de l'image
-  const handleImageError = (
-    event: React.SyntheticEvent<HTMLImageElement, Event>,
-  ) => {
-    event.currentTarget.src = defaultImageUrl; // Remplace l'image par défaut en cas d'erreur
+  const handleImageError = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    if (event.currentTarget.src !== defaultImageUrl) {
+      event.currentTarget.src = defaultImageUrl; // Change l'image uniquement si ce n'est pas déjà l'image par défaut
+    }
   };
 
   return (
@@ -50,10 +57,10 @@ const TopBar = ({ isCollapsed }: TopBarProps) => {
       </div>
 
       {isProfilePopupVisible && (
-        <div className=" absolute right-8 top-24 z-40">
-          <ProfilPopup onClose={() => setProfilePopupVisible(false)} />
-        </div>
-      )}
+  <div className="absolute right-8 top-24 z-40">
+    <ProfilPopup onClose={closeProfilePopup} />
+  </div>
+)}
     </div>
   );
 };

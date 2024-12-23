@@ -91,9 +91,14 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"math/big"
 	"time"
+
+	"github.com/google/uuid"
+
+	"sync/atomic"
 
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
@@ -246,4 +251,22 @@ func GenerateMobileRefreshToken(userID uint, secret string) (string, error) {
 		return "", err
 	}
 	return signedToken, nil
+}
+
+var ticketCounter int64 = 0 // Compteur global pour les tickets
+
+// GenerateReadableTicket génère un ticket au format TICKET-YYYYMMDD-XXXXX.
+func GenerateReadableTicket() string {
+	timestamp := time.Now().Format("20060102") // Format YYYYMMDD
+	atomic.AddInt64(&ticketCounter, 1)         // Incrémente le compteur
+	return fmt.Sprintf("TICKET-%s-%05d", timestamp, ticketCounter)
+}
+
+// GenerateUUID génère un UUID unique.
+func GenerateUUID() (string, error) {
+	uuid, err := uuid.NewRandom()
+	if err != nil {
+		return "", err
+	}
+	return uuid.String(), nil
 }

@@ -16,10 +16,13 @@ type Config struct {
 		Password string
 		Name     string
 	}
-	ServerPort         string
-	S3Bucket           string
-	APIBaseURL         string
-	JwtSecretAccessKey string
+	ServerPort          string
+	S3Bucket            string
+	APIBaseURL          string
+	JwtSecretAccessKey  string
+	JwtSecretRefreshKey string
+	StripeSecretKey     string
+	StripeWebhookSecret string
 }
 
 var AppConfig Config
@@ -54,4 +57,7 @@ func LoadConfig() {
 	AppConfig.S3Bucket = viper.GetString("S3_BUCKET")
 	AppConfig.APIBaseURL = viper.GetString("API_BASE_URL")
 	AppConfig.JwtSecretAccessKey = viper.GetString("JWT_SECRET_ACCESS_KEY")
+	AppConfig.JwtSecretRefreshKey = viper.GetString("JWT_SECRET_REFRESH_KEY")
+	AppConfig.StripeSecretKey = viper.GetString("STRIPE_SECRET_KEY")
+	AppConfig.StripeWebhookSecret = viper.GetString("STRIPE_WEBHOOK_SECRET")
 }

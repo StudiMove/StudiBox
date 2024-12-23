@@ -61,6 +61,10 @@ const MobileNavigation = () => {
             alt="Profile"
             className="w-10 h-10 rounded-full border border-gray-300 cursor-pointer"
             onClick={handleProfileClick}
+            onError={(e) => {
+              // Remplace l'image échouée par une image par défaut
+              (e.target as HTMLImageElement).src = profilDefaultIcon;
+            }}
           />
         </div>
       </div>
@@ -125,12 +129,3 @@ const MobileNavigation = () => {
 };
 
 export default MobileNavigation;
-{
-  /* <img */
-}
-//             src={icon}
-//             alt={`${label} icon`}
-//             className={`w-6 h-6 `}
-//             style={{ filter: isActive ? 'invert(1)' : 'none' }}
-//           />
-//         </div>

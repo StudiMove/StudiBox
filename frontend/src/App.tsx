@@ -16,8 +16,8 @@ import UserPage from './pages/UserPage';
 import DashboardPage from './pages/DashboardPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import NotFoundPage from './pages/NotFoundPage';
+import TicketDetailsPage from './pages/TicketDetailsPage';
 
-import ProfilFormComponent from './components/Form/ProfilForm/ProfileFormComponent';
 const App = () => {
   return (
     <Provider store={store}>
@@ -29,11 +29,10 @@ const App = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
             <Route path="*" element={<NotFoundPage />} />
-            <Route path="/profile" element={<ProfilFormComponent />} />
-            {/* Routes protégées */}
+            <Route path="ticket/:uuid" element={<TicketDetailsPage />} />
+
             <Route path="/" element={<Layout />}>
               <Route path="*" element={<NotFoundPage />} />
-
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="profil" element={<ProfilPage />} />
               <Route path="organisation" element={<OrganisationPage />} />
@@ -46,7 +45,6 @@ const App = () => {
                 path="/organisation/:companyName"
                 element={<TargetOrganisationPage />}
               />
-
               <Route path="user" element={<UserPage />} />
             </Route>
           </Routes>

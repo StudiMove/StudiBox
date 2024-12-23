@@ -98,6 +98,7 @@ func (h *GetAllEventsMobileHandler) transformOptions(options []models.EventOptio
 			Description: option.Description,
 			Price:       option.Price,
 			Stock:       option.Stock,
+			PriceID:     option.PriceID,
 		})
 	}
 	return optionResponses
@@ -113,6 +114,7 @@ func (h *GetAllEventsMobileHandler) transformTarifs(tarifs []models.EventTarif) 
 			Description: tarif.Description,
 			Price:       tarif.Price,
 			Stock:       tarif.Stock,
+			PriceID:     tarif.PriceID,
 		})
 	}
 	return tarifResponses

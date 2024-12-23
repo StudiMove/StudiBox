@@ -153,6 +153,17 @@ func (s *AuthService) Login(loginReq *request.LoginRequest) (*response.LoginResp
 	if err != nil {
 		return nil, errors.New("failed to generate token")
 	}
+	// Génère un Refresh Token et le stocke en base de données
+	refreshToken, err := utils.GenerateMobileRefreshToken(user.ID, config.AppConfig.JwtSecretRefreshKey)
+	if err != nil {
+		return nil, errors.New("failed to generate refresh token")
+	}
+
+	// Sauvegarder le refresh token dans la base de données
+	user.RefreshToken = refreshToken
+	if err := s.DB.Save(&user).Error; err != nil {
+		return nil, errors.New("failed to save refresh token")
+	}
 
 	// Crée la réponse de connexion avec les détails de l’utilisateur
 	loginResp := &response.LoginResponse{
@@ -492,7 +503,89 @@ func (s *AuthService) GetUserIDByEmail(email string) (*response.UserIDResponse, 
 	}, nil
 }
 
-func (s *AuthService) RegisterNormalUser(registerReq *request.RegisterNormalUserRequest) (*response.RegisterResponse, error) {
+// func (s *AuthService) RegisterNormalUser(registerReq *request.RegisterNormalUserRequest) (*response.RegisterResponse, error) {
+// 	// Vérifie si l'email est déjà pris
+// 	emailCheckReq := &request.EmailExistenceRequest{Email: registerReq.Email}
+// 	if err := s.CheckIfEmailExists(emailCheckReq); err != nil {
+// 		return nil, err
+// 	}
+
+// 	// Vérifie le code de parrainage s'il est fourni
+// 	var parrainID uint
+// 	if registerReq.ParrainageCode != "" {
+// 		var parrain models.User
+// 		if err := s.DB.Where("parrain_code = ?", registerReq.ParrainageCode).First(&parrain).Error; err != nil {
+// 			return nil, errors.New("invalid parrainage code")
+// 		}
+// 		parrainID = parrain.ID
+// 	}
+
+// 	// Hasher le mot de passe
+// 	hashedPassword, err := utils.HashPassword(registerReq.Password)
+// 	if err != nil {
+// 		return nil, errors.New("failed to hash password")
+// 	}
+
+// 	// Générer un code de parrain unique
+// 	parrainCode := utils.GenerateParrainCode()
+
+// 	// Crée l'utilisateur sans encore l'insérer
+// 	user := models.User{
+// 		Email:          registerReq.Email,
+// 		Password:       hashedPassword,
+// 		FirstName:      registerReq.FirstName,
+// 		LastName:       registerReq.LastName,
+// 		ParrainageCode: registerReq.ParrainageCode,
+// 		ParrainCode:    parrainCode,
+// 	}
+
+// 	// Enregistrer l'utilisateur dans la base de données
+// 	if err := s.DB.Create(&user).Error; err != nil {
+// 		return nil, errors.New("failed to create user")
+// 	}
+
+// 	// Si le code de parrainage est valide, créer une relation de parrainage
+// 	if parrainID != 0 {
+// 		referral := models.Referral{
+// 			ParrainID: parrainID,
+// 			FilleulID: user.ID,
+// 		}
+// 		if err := s.DB.Create(&referral).Error; err != nil {
+// 			// Supprimer l'utilisateur si l'insertion de la relation échoue
+// 			s.DB.Delete(&user)
+// 			return nil, errors.New("failed to create referral")
+// 		}
+// 	}
+
+// 	// Récupérer l'ID du rôle "user"
+// 	roleIDReq := &request.RoleIDRequest{RoleName: "user"}
+// 	roleIDResp, err := s.GetRoleIDByName(roleIDReq)
+// 	if err != nil {
+// 		// Supprimer l'utilisateur si l'attribution du rôle échoue
+// 		s.DB.Delete(&user)
+// 		return nil, err
+// 	}
+
+// 	// Assigner le rôle "user" à l'utilisateur
+// 	assignRoleReq := &request.AssignUserRoleRequest{
+// 		UserID: user.ID,
+// 		RoleID: roleIDResp.RoleID,
+// 	}
+// 	if _, err := s.AssignUserRole(assignRoleReq); err != nil {
+// 		// Supprimer l'utilisateur si l'attribution du rôle échoue
+// 		s.DB.Delete(&user)
+// 		return nil, err
+// 	}
+
+//		// Retourner une réponse réussie
+//		return &response.RegisterResponse{
+//			UserID:  user.ID,
+//			Message: "Normal user successfully registered",
+//			Success: true,
+//		}, nil
+//	}
+
+func (s *AuthService) RegisterNormalUser(registerReq *request.RegisterNormalUserRequest) (*response.RegisterUserResponse, error) {
 	// Vérifie si l'email est déjà pris
 	emailCheckReq := &request.EmailExistenceRequest{Email: registerReq.Email}
 	if err := s.CheckIfEmailExists(emailCheckReq); err != nil {
@@ -566,10 +659,55 @@ func (s *AuthService) RegisterNormalUser(registerReq *request.RegisterNormalUser
 		return nil, err
 	}
 
-	// Retourner une réponse réussie
-	return &response.RegisterResponse{
+	// Générer un token JWT
+	token, err := utils.GenerateJWT(user.ID, config.AppConfig.JwtSecretAccessKey)
+	if err != nil {
+		return nil, errors.New("failed to generate JWT")
+	}
+
+	// Générer un refresh token et le stocker dans la base de données
+	refreshToken, err := utils.GenerateMobileRefreshToken(user.ID, config.AppConfig.JwtSecretRefreshKey)
+	if err != nil {
+		return nil, errors.New("failed to generate refresh token")
+	}
+	user.RefreshToken = refreshToken
+	if err := s.DB.Save(&user).Error; err != nil {
+		return nil, errors.New("failed to save refresh token")
+	}
+
+	// Retourner une réponse réussie avec le token
+	return &response.RegisterUserResponse{
 		UserID:  user.ID,
-		Message: "Normal user successfully registered",
+		Message: "User successfully registered",
 		Success: true,
+		Token:   token,
 	}, nil
+}
+
+func (s *AuthService) AutoAuthenticate(token string) (*models.User, error) {
+	// Extraire l'ID utilisateur du token JWT
+	userID, err := utils.ExtractUserIDFromToken(token, config.AppConfig.JwtSecretAccessKey)
+	if err != nil {
+		return nil, errors.New("invalid token")
+	}
+
+	// Vérifier si l'utilisateur existe dans la base de données
+	var user models.User
+	if err := s.DB.First(&user, userID).Error; err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	// Retourner l'utilisateur si trouvé
+	return &user, nil
+}
+
+// RefreshAccessToken génère un nouveau access token pour un utilisateur à partir de son ID
+func (s *AuthService) RefreshAccessToken(userID uint) (string, error) {
+	// Générer un nouveau access token avec une expiration prolongée
+	newAccessToken, err := utils.GenerateJWT(userID, config.AppConfig.JwtSecretAccessKey)
+	if err != nil {
+		return "", err
+	}
+
+	return newAccessToken, nil
 }

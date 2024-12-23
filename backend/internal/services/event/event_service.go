@@ -5,7 +5,9 @@ import (
 	"backend/internal/api/models/event/response"
 	"backend/internal/db/models"
 	"backend/internal/services/storage" // Importer votre package de stockage
+	"backend/internal/services/stripe"
 	"encoding/json"
+	"fmt"
 	"log"
 	"mime/multipart" // Ajoutez cette ligne
 
@@ -15,15 +17,110 @@ import (
 type EventService struct {
 	db             *gorm.DB
 	StorageService storage.StorageService // Ajout du StorageService
+	StripeService  *stripe.StripeService  // Ajout du StripeService
+
 }
 
-func NewEventService(db *gorm.DB, storageService storage.StorageService) *EventService {
+func NewEventService(db *gorm.DB, storageService storage.StorageService, stripeService *stripe.StripeService) *EventService {
 	return &EventService{
 		db:             db,
 		StorageService: storageService, // Initialisation du StorageService
+		StripeService:  stripeService,
 	}
 }
 
+// func (s *EventService) CreateEvent(req request.CreateEventRequest) (uint, error) {
+// 	// Créer le modèle Event à partir de la requête
+// 	event := &models.Event{
+// 		UserID:      req.UserID,
+// 		Title:       req.Title,
+// 		Subtitle:    req.Subtitle,
+// 		StartDate:   req.StartDate,
+// 		EndDate:     req.EndDate,
+// 		StartTime:   req.StartTime,
+// 		EndTime:     req.EndTime,
+// 		IsOnline:    req.IsOnline,
+// 		IsVisible:   req.IsVisible,
+// 		UseStudibox: req.UseStudibox,
+// 		TicketPrice: req.TicketPrice,
+// 		TicketStock: req.TicketStock,
+// 		Address:     req.Location.Address,
+// 		City:        req.Location.City,
+// 		Postcode:    req.Location.Postcode,
+// 		Region:      req.Location.Region,
+// 		Country:     req.Location.Country,
+// 		VideoURL:    req.VideoURL,
+// 		ImageURLs:   req.Images,
+// 	}
+
+// 	// Sauvegarder l'événement principal
+// 	if err := s.db.Create(event).Error; err != nil {
+// 		return 0, err
+// 	}
+
+// 	// Sauvegarder les descriptions
+// 	if len(req.Descriptions) > 0 {
+// 		descriptions := make([]models.EventDescription, len(req.Descriptions))
+// 		for i, desc := range req.Descriptions {
+// 			descriptions[i] = models.EventDescription{
+// 				EventID:     event.ID,
+// 				Title:       desc.Title,
+// 				Description: desc.Description,
+// 			}
+// 		}
+// 		if err := s.db.Create(&descriptions).Error; err != nil {
+// 			return 0, err
+// 		}
+// 	}
+
+// 	// Sauvegarder les options
+// 	if len(req.Options) > 0 {
+// 		options := make([]models.EventOption, len(req.Options))
+// 		for i, opt := range req.Options {
+// 			options[i] = models.EventOption{
+// 				EventID:     event.ID,
+// 				Title:       opt.Title,
+// 				Description: opt.Description,
+// 				Price:       opt.Price,
+// 				Stock:       opt.Stock,
+// 			}
+// 		}
+// 		if err := s.db.Create(&options).Error; err != nil {
+// 			return 0, err
+// 		}
+// 	}
+
+// 	// Sauvegarder les tarifs
+// 	if len(req.Tarifs) > 0 {
+// 		tarifs := make([]models.EventTarif, len(req.Tarifs))
+// 		for i, tarif := range req.Tarifs {
+// 			tarifs[i] = models.EventTarif{
+// 				EventID:     event.ID,
+// 				Title:       tarif.Title,
+// 				Description: tarif.Description,
+// 				Price:       tarif.Price,
+// 				Stock:       tarif.Stock,
+// 			}
+// 		}
+// 		if err := s.db.Create(&tarifs).Error; err != nil {
+// 			return 0, err
+// 		}
+// 	}
+
+// 	// Associer les catégories
+// 	if err := s.UpdateEventCategories(event.ID, req.Categories); err != nil {
+// 		log.Printf("Erreur lors de la mise à jour des catégories pour l'événement ID %d: %v", event.ID, err)
+// 		return 0, err
+// 	}
+
+// 	// Associer les tags
+// 	if err := s.UpdateEventTags(event.ID, req.Tags); err != nil {
+// 		log.Printf("Erreur lors de la mise à jour des tags pour l'événement ID %d: %v", event.ID, err)
+// 		return 0, err
+// 	}
+
+//		return event.ID, nil
+//	}
 func (s *EventService) CreateEvent(req request.CreateEventRequest) (uint, error) {
 	// Créer le modèle Event à partir de la requête
 	event := &models.Event{
@@ -48,12 +145,111 @@ func (s *EventService) CreateEvent(req request.CreateEventRequest) (uint, error)
 		ImageURLs:   req.Images,
 	}
 
-	// Sauvegarder l'événement principal
-	if err := s.db.Create(event).Error; err != nil {
-		return 0, err
+	// Démarrer une transaction pour assurer le rollback si une étape échoue
+	tx := s.db.Begin()
+	if err := tx.Create(event).Error; err != nil {
+		tx.Rollback()
+		log.Printf("Erreur lors de la création de l'événement dans la base de données : %v", err)
+		return 0, fmt.Errorf("failed to create event in database: %w", err)
 	}
 
-	// Sauvegarder les descriptions
+	// Étape 1 : Créer le produit Stripe
+	productID, err := s.StripeService.CreateProductFromEvent(event)
+	if err != nil {
+		tx.Rollback()
+		log.Printf("Erreur lors de la création du produit Stripe : %v", err)
+		return 0, fmt.Errorf("failed to create Stripe product: %w", err)
+	}
+
+	// Associer le productID à l'événement
+	event.ProductID = productID
+	if err := tx.Save(event).Error; err != nil {
+		tx.Rollback()
+		log.Printf("Erreur lors de la mise à jour du productID Stripe pour l'événement : %v", err)
+		return 0, fmt.Errorf("failed to save Stripe product ID to event: %w", err)
+	}
+
+	// Étape 2 : Créer les tarifs associés dans Stripe
+	if len(req.Tarifs) > 0 {
+		for _, tarifRequest := range req.Tarifs {
+			tarif := models.EventTarif{
+				EventID:     event.ID,
+				Title:       tarifRequest.Title,
+				Description: tarifRequest.Description,
+				Price:       tarifRequest.Price,
+				Stock:       tarifRequest.Stock,
+			}
+
+			// Créer le tarif Stripe et obtenir le PriceID
+			priceID, err := s.StripeService.CreatePriceFromTarif(productID, tarif)
+			if err != nil {
+				tx.Rollback()
+				log.Printf("Erreur lors de la création du tarif Stripe : %v", err)
+				return 0, fmt.Errorf("failed to create Stripe price: %w", err)
+			}
+
+			// Associer le PriceID au tarif
+			tarif.PriceID = priceID
+
+			// Sauvegarder le tarif dans la base de données
+			if err := tx.Create(&tarif).Error; err != nil {
+				tx.Rollback()
+				log.Printf("Erreur lors de la sauvegarde du tarif dans la base de données : %v", err)
+				return 0, fmt.Errorf("failed to save tarif to database: %w", err)
+			}
+		}
+	}
+
+	// Étape 3 : Créer les options associées dans Stripe
+	if len(req.Options) > 0 {
+		for _, optionReq := range req.Options {
+			option := models.EventOption{
+				EventID:     event.ID,
+				Title:       optionReq.Title,
+				Description: optionReq.Description,
+				Price:       optionReq.Price,
+				Stock:       optionReq.Stock,
+			}
+
+			// Créer l'option Stripe et obtenir le PriceID
+			priceID, err := s.StripeService.CreateOptionPrice(productID, option)
+			if err != nil {
+				tx.Rollback()
+				log.Printf("Erreur lors de la création de l'option Stripe : %v", err)
+				return 0, fmt.Errorf("failed to create Stripe option price: %w", err)
+			}
+
+			// Vérification : le PriceID doit être non vide
+			if priceID == "" {
+				tx.Rollback()
+				log.Printf("Erreur : PriceID vide pour l'option '%s'", option.Title)
+				return 0, fmt.Errorf("PriceID est vide pour l'option '%s'", option.Title)
+			}
+
+			// Assigner le PriceID à l'option
+			option.PriceID = priceID
+
+			// Vérifier si une option avec le même PriceID existe déjà
+			existingOption := models.EventOption{}
+			if err := tx.Where("price_id = ?", option.PriceID).First(&existingOption).Error; err == nil {
+				tx.Rollback()
+				log.Printf("Erreur : une option avec PriceID '%s' existe déjà dans la base de données", option.PriceID)
+				return 0, fmt.Errorf("option avec PriceID '%s' existe déjà", option.PriceID)
+			}
+
+			// Insérer l'option dans la base de données
+			if err := tx.Create(&option).Error; err != nil {
+				tx.Rollback()
+				log.Printf("Erreur lors de l'insertion de l'option '%s' avec PriceID '%s': %v", option.Title, option.PriceID, err)
+				return 0, fmt.Errorf("failed to save option '%s' to database: %w", option.Title, err)
+			}
+
+			// Log succès
+			log.Printf("Option '%s' avec PriceID '%s' insérée avec succès dans la base de données", option.Title, option.PriceID)
+		}
+	}
+
+	// Étape 4 : Sauvegarder les descriptions localement
 	if len(req.Descriptions) > 0 {
 		descriptions := make([]models.EventDescription, len(req.Descriptions))
 		for i, desc := range req.Descriptions {
@@ -63,57 +259,33 @@ func (s *EventService) CreateEvent(req request.CreateEventRequest) (uint, error)
 				Description: desc.Description,
 			}
 		}
-		if err := s.db.Create(&descriptions).Error; err != nil {
+		if err := tx.Create(&descriptions).Error; err != nil {
+			tx.Rollback()
+			log.Printf("Erreur lors de la sauvegarde des descriptions : %v", err)
 			return 0, err
 		}
 	}
 
-	// Sauvegarder les options
-	if len(req.Options) > 0 {
-		options := make([]models.EventOption, len(req.Options))
-		for i, opt := range req.Options {
-			options[i] = models.EventOption{
-				EventID:     event.ID,
-				Title:       opt.Title,
-				Description: opt.Description,
-				Price:       opt.Price,
-				Stock:       opt.Stock,
-			}
-		}
-		if err := s.db.Create(&options).Error; err != nil {
-			return 0, err
-		}
-	}
-
-	// Sauvegarder les tarifs
-	if len(req.Tarifs) > 0 {
-		tarifs := make([]models.EventTarif, len(req.Tarifs))
-		for i, tarif := range req.Tarifs {
-			tarifs[i] = models.EventTarif{
-				EventID:     event.ID,
-				Title:       tarif.Title,
-				Description: tarif.Description,
-				Price:       tarif.Price,
-				Stock:       tarif.Stock,
-			}
-		}
-		if err := s.db.Create(&tarifs).Error; err != nil {
-			return 0, err
-		}
-	}
-
-	// Associer les catégories
-	if err := s.UpdateEventCategories(event.ID, req.Categories); err != nil {
-		log.Printf("Erreur lors de la mise à jour des catégories pour l'événement ID %d: %v", event.ID, err)
+	// Étape 5 : Associer les catégories et tags
+	if err := s.UpdateEventCategories(tx, event.ID, req.Categories); err != nil {
+		log.Printf("Erreur lors de la mise à jour des catégories : %v", err)
+		tx.Rollback()
 		return 0, err
 	}
 
-	// Associer les tags
-	if err := s.UpdateEventTags(event.ID, req.Tags); err != nil {
-		log.Printf("Erreur lors de la mise à jour des tags pour l'événement ID %d: %v", event.ID, err)
+	if err := s.UpdateEventTags(tx, event.ID, req.Tags); err != nil {
+		log.Printf("Erreur lors de la mise à jour des tags : %v", err)
+		tx.Rollback()
 		return 0, err
 	}
 
+	// Commit de la transaction si tout s'est bien passé
+	if err := tx.Commit().Error; err != nil {
+		log.Printf("Erreur lors du commit de la transaction : %v", err)
+		return 0, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	log.Printf("Événement créé avec succès : ID %d", event.ID)
 	return event.ID, nil
 }
 
@@ -349,10 +521,10 @@ func (s *EventService) UpdateEvent(eventID uint, updatedEvent *models.Event, cat
 	}
 
 	// Mettre à jour les catégories et tags
-	if err := s.UpdateEventCategories(eventID, categoryNames); err != nil {
+	if err := s.UpdateEventCategories(s.db, eventID, categoryNames); err != nil {
 		return err
 	}
-	if err := s.UpdateEventTags(eventID, tagNames); err != nil {
+	if err := s.UpdateEventTags(s.db, eventID, tagNames); err != nil {
 		return err
 	}
 
@@ -367,102 +539,291 @@ func joinImageURLs(imageURLs []string) string {
 	return string(jsonData)
 }
 
+// func (s *EventService) UpdateEventOptions(eventID uint, options []models.EventOption) error {
+// 	// Récupérer les options actuelles pour cet événement par leur `Title`
+// 	var existingOptions []models.EventOption
+// 	if err := s.db.Where("event_id = ?", eventID).Find(&existingOptions).Error; err != nil {
+// 		log.Printf("Erreur lors de la récupération des options existantes pour l'événement ID %d: %v", eventID, err)
+// 		return err
+// 	}
+
+// 	// Créer une map des options existantes pour un accès rapide par `Title`
+// 	existingOptionsMap := make(map[string]models.EventOption)
+// 	for _, option := range existingOptions {
+// 		existingOptionsMap[option.Title] = option
+// 	}
+
+// 	// Créer un ensemble des titres des nouvelles options pour vérifier les suppressions
+// 	newOptionsTitles := make(map[string]struct{})
+// 	for _, newOption := range options {
+// 		newOption.EventID = eventID                    // Associe chaque option à cet événement
+// 		newOptionsTitles[newOption.Title] = struct{}{} // Ajoute le titre de l'option à l'ensemble
+
+// 		if existingOption, exists := existingOptionsMap[newOption.Title]; exists {
+// 			// Si l'option existe, mise à jour
+// 			newOption.ID = existingOption.ID // Préserve l'ID existant pour éviter de créer un doublon
+// 			if err := s.db.Model(&models.EventOption{}).Where("id = ?", existingOption.ID).Updates(newOption).Error; err != nil {
+// 				log.Printf("Erreur lors de la mise à jour de l'option %s pour l'événement ID %d: %v", newOption.Title, eventID, err)
+// 				return err
+// 			}
+// 		} else {
+// 			// Sinon, crée une nouvelle option
+// 			if err := s.db.Create(&newOption).Error; err != nil {
+// 				log.Printf("Erreur lors de la création de l'option %s pour l'événement ID %d: %v", newOption.Title, eventID, err)
+// 				return err
+// 			}
+// 		}
+// 	}
+
+// 	// Identifier et supprimer les options manquantes
+// 	for title, existingOption := range existingOptionsMap {
+// 		if _, found := newOptionsTitles[title]; !found {
+// 			// Supprime les options qui ne sont pas dans la nouvelle liste
+// 			if err := s.db.Delete(&existingOption).Error; err != nil {
+// 				log.Printf("Erreur lors de la suppression de l'option %s pour l'événement ID %d: %v", existingOption.Title, eventID, err)
+// 				return err
+// 			}
+// 			log.Printf("Option supprimée : %s pour l'événement ID %d", existingOption.Title, eventID)
+// 		}
+// 	}
+
+// 	return nil
+// }
+
 func (s *EventService) UpdateEventOptions(eventID uint, options []models.EventOption) error {
-	// Récupérer les options actuelles pour cet événement par leur `Title`
+	// Récupérer le productID associé à cet événement
+	var event models.Event
+	if err := s.db.Select("product_id").Where("id = ?", eventID).First(&event).Error; err != nil {
+		log.Printf("Erreur lors de la récupération du produit Stripe pour l'événement ID %d: %v", eventID, err)
+		return fmt.Errorf("product ID not found for event ID %d", eventID)
+	}
+	productID := event.ProductID
+
+	// Récupérer les options actuelles pour cet événement
 	var existingOptions []models.EventOption
 	if err := s.db.Where("event_id = ?", eventID).Find(&existingOptions).Error; err != nil {
 		log.Printf("Erreur lors de la récupération des options existantes pour l'événement ID %d: %v", eventID, err)
 		return err
 	}
 
-	// Créer une map des options existantes pour un accès rapide par `Title`
-	existingOptionsMap := make(map[string]models.EventOption)
+	// Créer une map des options existantes pour un accès rapide par `ID`
+	existingOptionsMap := make(map[uint]models.EventOption)
 	for _, option := range existingOptions {
-		existingOptionsMap[option.Title] = option
+		existingOptionsMap[option.ID] = option
 	}
 
-	// Créer un ensemble des titres des nouvelles options pour vérifier les suppressions
-	newOptionsTitles := make(map[string]struct{})
+	// Traiter les nouvelles options
 	for _, newOption := range options {
-		newOption.EventID = eventID                    // Associe chaque option à cet événement
-		newOptionsTitles[newOption.Title] = struct{}{} // Ajoute le titre de l'option à l'ensemble
+		newOption.EventID = eventID // Associe chaque option à cet événement
 
-		if existingOption, exists := existingOptionsMap[newOption.Title]; exists {
+		if existingOption, exists := existingOptionsMap[newOption.ID]; exists {
 			// Si l'option existe, mise à jour
-			newOption.ID = existingOption.ID // Préserve l'ID existant pour éviter de créer un doublon
+
+			// Mettre à jour sur Stripe
+			newPriceID, err := s.StripeService.UpdateOptionPrice(productID, existingOption.PriceID, newOption)
+			if err != nil {
+				log.Printf("Erreur lors de la mise à jour de l'option Stripe pour %s : %v", newOption.Title, err)
+				return err
+			}
+
+			// Mettre à jour le PriceID si un nouveau a été généré
+			newOption.PriceID = newPriceID
+
+			// Mettre à jour dans la base de données
 			if err := s.db.Model(&models.EventOption{}).Where("id = ?", existingOption.ID).Updates(newOption).Error; err != nil {
 				log.Printf("Erreur lors de la mise à jour de l'option %s pour l'événement ID %d: %v", newOption.Title, eventID, err)
 				return err
 			}
+			log.Printf("Option mise à jour : %s pour l'événement ID %d", newOption.Title, eventID)
 		} else {
 			// Sinon, crée une nouvelle option
+
+			// Créer l'option sur Stripe
+			priceID, err := s.StripeService.CreateOptionPrice(productID, newOption)
+			if err != nil {
+				log.Printf("Erreur lors de la création de l'option Stripe %s pour l'événement ID %d: %v", newOption.Title, eventID, err)
+				return err
+			}
+			newOption.PriceID = priceID
+
+			// Créer dans la base de données
 			if err := s.db.Create(&newOption).Error; err != nil {
 				log.Printf("Erreur lors de la création de l'option %s pour l'événement ID %d: %v", newOption.Title, eventID, err)
 				return err
 			}
+			log.Printf("Nouvelle option créée : %s pour l'événement ID %d", newOption.Title, eventID)
 		}
 	}
 
-	// Identifier et supprimer les options manquantes
-	for title, existingOption := range existingOptionsMap {
-		if _, found := newOptionsTitles[title]; !found {
-			// Supprime les options qui ne sont pas dans la nouvelle liste
-			if err := s.db.Delete(&existingOption).Error; err != nil {
-				log.Printf("Erreur lors de la suppression de l'option %s pour l'événement ID %d: %v", existingOption.Title, eventID, err)
-				return err
-			}
-			log.Printf("Option supprimée : %s pour l'événement ID %d", existingOption.Title, eventID)
+	// Supprimer les options qui ne sont plus dans la nouvelle liste
+	optionIDs := make([]uint, len(options))
+	for i, opt := range options {
+		optionIDs[i] = opt.ID
+	}
+
+	// Désactiver et supprimer les options obsolètes
+	var obsoleteOptions []models.EventOption
+	if err := s.db.Where("event_id = ? AND id NOT IN (?)", eventID, optionIDs).Find(&obsoleteOptions).Error; err != nil {
+		log.Printf("Erreur lors de la récupération des options obsolètes pour l'événement ID %d: %v", eventID, err)
+		return err
+	}
+
+	for _, obsoleteOption := range obsoleteOptions {
+		// Désactiver le prix Stripe associé
+		if err := s.StripeService.DisablePrice(obsoleteOption.PriceID); err != nil {
+			log.Printf("Erreur lors de la désactivation de l'option Stripe %s : %v", obsoleteOption.PriceID, err)
+			return err
 		}
+
+		// Supprimer l'option de la base de données
+		if err := s.db.Delete(&obsoleteOption).Error; err != nil {
+			log.Printf("Erreur lors de la suppression de l'option %s pour l'événement ID %d: %v", obsoleteOption.Title, eventID, err)
+			return err
+		}
+		log.Printf("Option obsolète supprimée : %s pour l'événement ID %d", obsoleteOption.Title, eventID)
 	}
 
 	return nil
 }
+
+// func (s *EventService) UpdateEventTarifs(eventID uint, tarifs []models.EventTarif) error {
+// 	// Récupérer les tarifs actuels pour cet événement par leur `Title`
+// 	var existingTarifs []models.EventTarif
+// 	if err := s.db.Where("event_id = ?", eventID).Find(&existingTarifs).Error; err != nil {
+// 		log.Printf("Erreur lors de la récupération des tarifs existants pour l'événement ID %d: %v", eventID, err)
+// 		return err
+// 	}
+
+// 	// Créer une map des tarifs existants pour un accès rapide par `Title`
+// 	existingTarifsMap := make(map[string]models.EventTarif)
+// 	for _, tarif := range existingTarifs {
+// 		existingTarifsMap[tarif.Title] = tarif
+// 	}
+
+// 	// Créer un ensemble des titres des nouveaux tarifs pour vérifier les suppressions
+// 	newTarifsTitles := make(map[string]struct{})
+// 	for _, newTarif := range tarifs {
+// 		newTarif.EventID = eventID                   // Associe chaque tarif à cet événement
+// 		newTarifsTitles[newTarif.Title] = struct{}{} // Ajoute le titre du tarif à l'ensemble
+
+// 		if existingTarif, exists := existingTarifsMap[newTarif.Title]; exists {
+// 			// Si le tarif existe, mise à jour
+// 			newTarif.ID = existingTarif.ID // Préserve l'ID existant pour éviter de créer un doublon
+// 			if err := s.db.Model(&models.EventTarif{}).Where("id = ?", existingTarif.ID).Updates(newTarif).Error; err != nil {
+// 				log.Printf("Erreur lors de la mise à jour du tarif %s pour l'événement ID %d: %v", newTarif.Title, eventID, err)
+// 				return err
+// 			}
+// 		} else {
+// 			// Sinon, crée un nouveau tarif
+// 			if err := s.db.Create(&newTarif).Error; err != nil {
+// 				log.Printf("Erreur lors de la création du tarif %s pour l'événement ID %d: %v", newTarif.Title, eventID, err)
+// 				return err
+// 			}
+// 		}
+// 	}
+
+// 	// Identifier et supprimer les tarifs manquants
+// 	for title, existingTarif := range existingTarifsMap {
+// 		if _, found := newTarifsTitles[title]; !found {
+// 			// Supprime les tarifs qui ne sont pas dans la nouvelle liste
+// 			if err := s.db.Delete(&existingTarif).Error; err != nil {
+// 				log.Printf("Erreur lors de la suppression du tarif %s pour l'événement ID %d: %v", existingTarif.Title, eventID, err)
+// 				return err
+// 			}
+// 			log.Printf("Tarif supprimé : %s pour l'événement ID %d", existingTarif.Title, eventID)
+// 		}
+// 	}
+
+// 	return nil
+// }
+
 func (s *EventService) UpdateEventTarifs(eventID uint, tarifs []models.EventTarif) error {
-	// Récupérer les tarifs actuels pour cet événement par leur `Title`
+	// Récupérer les tarifs actuels pour cet événement
 	var existingTarifs []models.EventTarif
 	if err := s.db.Where("event_id = ?", eventID).Find(&existingTarifs).Error; err != nil {
 		log.Printf("Erreur lors de la récupération des tarifs existants pour l'événement ID %d: %v", eventID, err)
 		return err
 	}
 
-	// Créer une map des tarifs existants pour un accès rapide par `Title`
-	existingTarifsMap := make(map[string]models.EventTarif)
+	// Récupérer le productID associé à cet événement
+	var event models.Event
+	if err := s.db.Select("product_id").Where("id = ?", eventID).First(&event).Error; err != nil {
+		log.Printf("Erreur lors de la récupération du produit Stripe pour l'événement ID %d: %v", eventID, err)
+		return fmt.Errorf("product ID not found for event ID %d", eventID)
+	}
+	productID := event.ProductID
+
+	// Créer une map des tarifs existants pour un accès rapide par `ID`
+	existingTarifsMap := make(map[uint]models.EventTarif)
 	for _, tarif := range existingTarifs {
-		existingTarifsMap[tarif.Title] = tarif
+		existingTarifsMap[tarif.ID] = tarif
 	}
 
-	// Créer un ensemble des titres des nouveaux tarifs pour vérifier les suppressions
-	newTarifsTitles := make(map[string]struct{})
+	// Traiter les nouveaux tarifs
 	for _, newTarif := range tarifs {
-		newTarif.EventID = eventID                   // Associe chaque tarif à cet événement
-		newTarifsTitles[newTarif.Title] = struct{}{} // Ajoute le titre du tarif à l'ensemble
+		newTarif.EventID = eventID // Associe chaque tarif à cet événement
 
-		if existingTarif, exists := existingTarifsMap[newTarif.Title]; exists {
+		if existingTarif, exists := existingTarifsMap[newTarif.ID]; exists {
 			// Si le tarif existe, mise à jour
-			newTarif.ID = existingTarif.ID // Préserve l'ID existant pour éviter de créer un doublon
+
+			// Mettre à jour sur Stripe
+			newPriceID, err := s.StripeService.UpdatePrice(productID, existingTarif.PriceID, newTarif)
+			if err != nil {
+				log.Printf("Erreur lors de la mise à jour du tarif Stripe pour %s : %v", newTarif.Title, err)
+				return err
+			}
+
+			// Mettre à jour le PriceID si un nouveau a été généré
+			newTarif.PriceID = newPriceID
+
+			// Mettre à jour dans la base de données
 			if err := s.db.Model(&models.EventTarif{}).Where("id = ?", existingTarif.ID).Updates(newTarif).Error; err != nil {
 				log.Printf("Erreur lors de la mise à jour du tarif %s pour l'événement ID %d: %v", newTarif.Title, eventID, err)
 				return err
 			}
+			log.Printf("Tarif mis à jour : %s pour l'événement ID %d", newTarif.Title, eventID)
 		} else {
 			// Sinon, crée un nouveau tarif
+			priceID, err := s.StripeService.CreatePriceFromTarif(productID, newTarif)
+			if err != nil {
+				log.Printf("Erreur lors de la création du tarif Stripe %s pour l'événement ID %d: %v", newTarif.Title, eventID, err)
+				return err
+			}
+			newTarif.PriceID = priceID
+
 			if err := s.db.Create(&newTarif).Error; err != nil {
 				log.Printf("Erreur lors de la création du tarif %s pour l'événement ID %d: %v", newTarif.Title, eventID, err)
 				return err
 			}
+			log.Printf("Nouveau tarif créé : %s pour l'événement ID %d", newTarif.Title, eventID)
 		}
 	}
 
-	// Identifier et supprimer les tarifs manquants
-	for title, existingTarif := range existingTarifsMap {
-		if _, found := newTarifsTitles[title]; !found {
-			// Supprime les tarifs qui ne sont pas dans la nouvelle liste
-			if err := s.db.Delete(&existingTarif).Error; err != nil {
-				log.Printf("Erreur lors de la suppression du tarif %s pour l'événement ID %d: %v", existingTarif.Title, eventID, err)
-				return err
-			}
-			log.Printf("Tarif supprimé : %s pour l'événement ID %d", existingTarif.Title, eventID)
+	// Supprimer les tarifs qui ne sont plus dans la nouvelle liste
+	tarifIDs := make([]uint, len(tarifs))
+	for i, tarif := range tarifs {
+		tarifIDs[i] = tarif.ID
+	}
+
+	var obsoleteTarifs []models.EventTarif
+	if err := s.db.Where("event_id = ? AND id NOT IN (?)", eventID, tarifIDs).Find(&obsoleteTarifs).Error; err != nil {
+		log.Printf("Erreur lors de la récupération des tarifs obsolètes pour l'événement ID %d: %v", eventID, err)
+		return err
+	}
+
+	for _, obsoleteTarif := range obsoleteTarifs {
+		// Désactiver le tarif sur Stripe
+		if err := s.StripeService.DisablePrice(obsoleteTarif.PriceID); err != nil {
+			log.Printf("Erreur lors de la désactivation du tarif Stripe %s : %v", obsoleteTarif.PriceID, err)
+			return err
 		}
+
+		// Supprimer le tarif de la base de données
+		if err := s.db.Delete(&obsoleteTarif).Error; err != nil {
+			log.Printf("Erreur lors de la suppression du tarif %s pour l'événement ID %d: %v", obsoleteTarif.Title, eventID, err)
+			return err
+		}
+		log.Printf("Tarif obsolète supprimé : %s pour l'événement ID %d", obsoleteTarif.Title, eventID)
 	}
 
 	return nil
@@ -696,7 +1057,7 @@ func (s *EventService) GetAllCategories() ([]response.CategoryResponse, error) {
 	return s.transformCategoriesToResponses(categories), nil
 }
 
-func (s *EventService) UpdateEventCategories(eventID uint, categoryNames []string) error {
+func (s *EventService) UpdateEventCategories(txOrDb *gorm.DB, eventID uint, categoryNames []string) error {
 	// Obtenir ou créer les catégories en utilisant leur nom
 	categories, err := s.GetOrCreateCategories(categoryNames) // Retourne un []models.EventCategory
 	if err != nil {
@@ -706,13 +1067,13 @@ func (s *EventService) UpdateEventCategories(eventID uint, categoryNames []strin
 
 	// Récupérer l'événement correspondant
 	var event models.Event
-	if err := s.db.First(&event, eventID).Error; err != nil {
+	if err := txOrDb.First(&event, eventID).Error; err != nil {
 		log.Printf("Erreur lors de la récupération de l'événement avec ID: %d, erreur: %v", eventID, err)
 		return err
 	}
 
 	// Mettre à jour les catégories pour cet événement avec le type correct
-	if err := s.db.Model(&event).Association("Categories").Replace(categories); err != nil {
+	if err := txOrDb.Model(&event).Association("Categories").Replace(categories); err != nil {
 		log.Printf("Erreur lors de la mise à jour des catégories pour l'événement: %v", err)
 		return err
 	}
@@ -720,7 +1081,7 @@ func (s *EventService) UpdateEventCategories(eventID uint, categoryNames []strin
 	return nil
 }
 
-func (s *EventService) UpdateEventTags(eventID uint, tagNames []string) error {
+func (s *EventService) UpdateEventTags(txOrDb *gorm.DB, eventID uint, tagNames []string) error {
 	// Utiliser `GetOrCreateTags` pour obtenir des modèles `EventTag`
 	tags, err := s.GetOrCreateTags(tagNames)
 	if err != nil {
@@ -728,14 +1089,15 @@ func (s *EventService) UpdateEventTags(eventID uint, tagNames []string) error {
 		return err
 	}
 
+	// Récupérer l'événement correspondant
 	var event models.Event
-	if err := s.db.First(&event, eventID).Error; err != nil {
+	if err := txOrDb.First(&event, eventID).Error; err != nil {
 		log.Printf("Erreur lors de la récupération de l'événement avec ID: %d, erreur: %v", eventID, err)
 		return err
 	}
 
 	// Mettre à jour la relation avec `models.EventTag`
-	if err := s.db.Model(&event).Association("Tags").Replace(tags); err != nil {
+	if err := txOrDb.Model(&event).Association("Tags").Replace(tags); err != nil {
 		log.Printf("Erreur lors de la mise à jour des tags pour l'événement: %v", err)
 		return err
 	}
@@ -798,4 +1160,26 @@ func (s *EventService) GetAllEventsMobile() ([]models.Event, error) {
 		return nil, err
 	}
 	return events, nil
+}
+
+func (s *EventService) GetFavoriteEventsByUserId(userId uint) ([]models.Event, error) {
+	var favoriteEvents []models.Event
+
+	// Sous-requête pour trouver les IDs des événements marqués comme favoris par l'utilisateur
+	subQuery := s.db.Model(&models.EventUserAction{}).
+		Select("event_id").
+		Where("user_id = ? AND is_favorite = true", userId) // Supprimé l'argument supplémentaire "true"
+
+	// Récupérer les événements correspondants
+	if err := s.db.Where("id IN (?)", subQuery).
+		Preload("Categories").
+		Preload("Tags").
+		Preload("Options").
+		Preload("Tarifs").
+		Preload("Descriptions").
+		Find(&favoriteEvents).Error; err != nil {
+		return nil, err
+	}
+
+	return favoriteEvents, nil
 }

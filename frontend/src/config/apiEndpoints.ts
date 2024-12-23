@@ -1,6 +1,7 @@
 // src/config/apiEndpoints.ts
 
 const API_URL = 'https://api.studibox.fr/api/v1'; // Utilise le nom du service Docker "backend"
+const BASE = 'http://localhost:8080'; 
 // const API_URL = process.env.API_URL || 'http://localhost:8080/api/v1'; // Utilise le nom du service Docker "backend"
 
 // EVENTS
@@ -54,3 +55,5 @@ export const API_URL_GET_ALL_EVENT_CATEGORIES = `${API_URL}/events/categories`;
 export const API_URL_GET_USER_EVENTS = `${API_URL}/events/list`; // Récupérer les événements de l'utilisateur
 export const API_URL_GET_TARGETLIST_EVENT = `${API_URL}/events/list/target`;
 export const API_URL_UPLOAD_EVENT_IMAGE = `${API_URL}/events/upload-image`; // Mettre à jour un événement
+
+export const API_URL_GET_TICKET_DETAILS = `${API_URL}/ticket`;

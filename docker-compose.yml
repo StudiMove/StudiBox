@@ -38,18 +38,13 @@ services:
       context: ./frontend
     ports:
       - '3000:80'
-    deploy:
-      resources:
-        limits:
-          memory: 2GiB
-          cpus: "1.0"
     depends_on:
       - backend
     networks:
       - studymovenetwork
 
   pgadmin:
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:latest
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
@@ -62,7 +57,7 @@ services:
     build:
       context: ./SMTP
     ports:
-      - '25:25'
+      - "2525:25"
     environment:
       - mailname=studibox.fr
       - smtp_user=user:password
